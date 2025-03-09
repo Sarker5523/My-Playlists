@@ -1,16 +1,16 @@
 backend:
   name: git-gateway
-  branch: main  # or your default branch
+  branch: main  # Replace "main" with your default branch if it's different
 
-media_folder: "static/images"  # Folder to upload media files (optional)
-public_folder: "/images"  # URL to access media files (optional)
+media_folder: "static/images"  # Optional: Folder for media uploads
+public_folder: "/images"  # URL path for accessing media files
 
 collections:
   - name: "videos"
     label: "Videos"
-    folder: "/"  # The folder where videos.json is stored
-    create: true  # Allow creating new items
-    slug: "{{slug}}"  # This creates a slug for each new item
+    folder: "/"  # Path to your `videos.json` file
+    create: true  # Allow adding new items
+    slug: "{{slug}}"
     fields:
       - { name: "title", label: "Title", widget: "string" }
       - { name: "url", label: "URL", widget: "string" }
