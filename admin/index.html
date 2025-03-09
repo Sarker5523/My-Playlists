@@ -2,14 +2,17 @@
 <html>
 <head>
   <title>Admin Panel</title>
-  <!-- Correctly include the Netlify CMS script -->
-  <script src="https://unpkg.com/netlify-cms@^2.0.0/dist/netlify-cms.js"></script>
+  <!-- Include the Netlify CMS script from a reliable CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/netlify-cms@^2.0.0/dist/netlify-cms.js"></script>
 </head>
 <body>
   <h1>Netlify CMS</h1>
 
+  <!-- Add the required container for the CMS -->
+  <div id="nc-root"></div>
+
   <script>
-    // Initialize Netlify CMS
+    // Initialize Netlify CMS only if the script is loaded properly
     if (window.NetlifyCms) {
       window.NetlifyCms.init();
     } else {
