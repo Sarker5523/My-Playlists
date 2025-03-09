@@ -152,3 +152,13 @@
         "suggestions": [10, 8, 15, 1, 12, 7, 6, 3, 4, 2]
     }
 ]
+
+//,
+    {
+        "id": "",
+        "name": "",
+        "embed_code": "<iframe width=\"640\" height=\"360\" src=\"https://short.icu/\" frameborder=\"0\" scrolling=\"0\" allowfullscreen></iframe>",
+        "thumbnail": "",
+        "description": "",
+        "suggestions": [10, 8, 15, 1, 12, 7, 6, 3, 4, 2]
+    }
