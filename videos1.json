@@ -7,19 +7,12 @@
             {
                 "episode_id": "1",
                 "name": "Episode-1",
-                "urls": {
-                    "1080p": "https://0.zxc68.workers.dev/2d970aedf7bb134bb14ea446ac7be41d/driveseed.org/When.Life.Gives.You.Tangerines.S01E01.Spring.in.a.Heartbeat.1080p.x264.Hindi.Korean.English.Msubs.MoviesMod.org.mkv"
-                },
-                "description": ""
+                "embed_code": "<iframe width=\"640\" height=\"360\" src=\"https://0.zxc68.workers.dev/2d970aedf7bb134bb14ea446ac7be41d/driveseed.org/When.Life.Gives.You.Tangerines.S01E01.Spring.in.a.Heartbeat.1080p.x264.Hindi.Korean.English.Msubs.MoviesMod.org.mkv\" frameborder=\"0\" scrolling=\"0\" allowfullscreen></iframe>"
             },
             {
                 "episode_id": "2",
                 "name": "Episode-2",
-                "urls": {
-                    "720p": "http://ftp16.circleftp.net/FILE/Dubbed%20TV%20Series%20%26%20Shows/When%20Life%20Gives%20You%20Tangerines%20%28TV%20Series%202025-%29%20%5BMulti%20Audio%5D%20%5BHin%2BEng%2BKor%5D/Season%201%20720p/When.Life.Gives.You.Tangerines.S01E02.Sassy.First.Love.720p.x264.Hindi.Korean.English.Msubs.MoviesMod.org.mkv",
-                    "1080p": "http://ftp16.circleftp.net/FILE/Dubbed%20TV%20Series%20%26%20Shows/When%20Life%20Gives%20You%20Tangerines%20%28TV%20Series%202025-%29%20%5BMulti%20Audio%5D%20%5BHin%2BEng%2BKor%5D/Season%201%201080p/When.Life.Gives.You.Tangerines.S01E02.Sassy.First.Love.1080p.x264.Hindi.Korean.English.Msubs.MoviesMod.org.mkv"
-                },
-                "description": ""
+                "embed_code": "<iframe width=\"640\" height=\"360\" src=\"http://ftp16.circleftp.net/FILE/Dubbed%20TV%20Series%20%26%20Shows/When%20Life%20Gives%20You%20Tangerines%20%28TV%20Series%202025-%29%20%5BMulti%20Audio%5D%20%5BHin%2BEng%2BKor%5D/Season%201%201080p/When.Life.Gives.You.Tangerines.S01E02.Sassy.First.Love.1080p.x264.Hindi.Korean.English.Msubs.MoviesMod.org.mkv\" frameborder=\"0\" scrolling=\"0\" allowfullscreen></iframe>"
             }
         ]
     },
@@ -31,20 +24,12 @@
             {
                 "episode_id": "1",
                 "name": "Episode-1",
-                "urls": {
-                    "720p": "https://example.com/another-series/episode-1-720p.m3u8",
-                    "1080p": "https://example.com/another-series/episode-1-1080p.m3u8"
-                },
-                "description": ""
+                "embed_code": "<iframe width=\"640\" height=\"360\" src=\"https://example.com/another-series/episode-1-1080p.m3u8\" frameborder=\"0\" scrolling=\"0\" allowfullscreen></iframe>"
             },
             {
                 "episode_id": "2",
                 "name": "Episode-2",
-                "urls": {
-                    "720p": "https://example.com/another-series/episode-2-720p.m3u8",
-                    "1080p": "https://example.com/another-series/episode-2-1080p.m3u8"
-                },
-                "description": ""
+                "embed_code": "<iframe width=\"640\" height=\"360\" src=\"https://example.com/another-series/episode-2-1080p.m3u8\" frameborder=\"0\" scrolling=\"0\" allowfullscreen></iframe>"
             }
         ]
     }
