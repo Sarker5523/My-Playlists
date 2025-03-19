@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-    fetch("movies.csv")
+    fetch("https://docs.google.com/spreadsheets/d/1xsz1l9reLyakcG1cQBZjytMJ6KZF0zX8Zac4a_YE4C0/export?format=csv")
         .then(response => response.text())
         .then(data => {
             const rows = data.split("\n").slice(1); // Remove header row
