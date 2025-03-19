@@ -1,4 +1,4 @@
-/* Netflix Background */
+/* General Styles */
 body {
     background-color: #141414;
     color: white;
@@ -7,7 +7,7 @@ body {
     padding: 0;
 }
 
-/* Netflix Header */
+/* Header */
 header {
     background-color: black;
     padding: 20px;
@@ -15,45 +15,42 @@ header {
     font-size: 24px;
 }
 
-/* Movie Category Title */
+/* Category Titles */
 .category {
     font-size: 22px;
     margin: 20px;
 }
 
-/* Movie Row (Netflix Horizontal Scrolling) */
+/* Horizontal Scrolling */
 .movie-row {
     display: flex;
     overflow-x: auto;
     padding: 10px;
     gap: 10px;
 }
-
-/* Scrollbar hidden */
 .movie-row::-webkit-scrollbar {
     display: none;
 }
 
-/* Movie Card */
-.movie {
+/* Episode Cards */
+.episode {
     position: relative;
     width: 200px;
     cursor: pointer;
     transition: transform 0.3s;
 }
-
-.movie:hover {
+.episode:hover {
     transform: scale(1.1);
 }
 
-/* Movie Thumbnail */
-.movie img {
+/* Thumbnails */
+.episode img {
     width: 100%;
     border-radius: 5px;
 }
 
-/* Movie Info Overlay */
-.movie-info {
+/* Episode Info Overlay */
+.episode-info {
     position: absolute;
     bottom: 0;
     background: rgba(0, 0, 0, 0.7);
@@ -64,7 +61,35 @@ header {
     opacity: 0;
     transition: opacity 0.3s;
 }
-
-.movie:hover .movie-info {
+.episode:hover .episode-info {
     opacity: 1;
+}
+
+/* Modal for Video */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: black;
+    padding: 20px;
+    width: 80%;
+    max-width: 800px;
+}
+.close {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 24px;
+    cursor: pointer;
 }
