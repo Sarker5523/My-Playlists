@@ -1,3 +1,4 @@
+/* Netflix Background */
 body {
     background-color: #141414;
     color: white;
@@ -6,21 +7,36 @@ body {
     padding: 0;
 }
 
+/* Netflix Header */
 header {
     background-color: black;
     padding: 20px;
-    text-align: center;
+    text-align: left;
     font-size: 24px;
 }
 
-#movies-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    padding: 20px;
+/* Movie Category Title */
+.category {
+    font-size: 22px;
+    margin: 20px;
 }
 
+/* Movie Row (Netflix Horizontal Scrolling) */
+.movie-row {
+    display: flex;
+    overflow-x: auto;
+    padding: 10px;
+    gap: 10px;
+}
+
+/* Scrollbar hidden */
+.movie-row::-webkit-scrollbar {
+    display: none;
+}
+
+/* Movie Card */
 .movie {
+    position: relative;
     width: 200px;
     cursor: pointer;
     transition: transform 0.3s;
@@ -30,13 +46,25 @@ header {
     transform: scale(1.1);
 }
 
+/* Movie Thumbnail */
 .movie img {
     width: 100%;
     border-radius: 5px;
 }
 
-.movie-title {
-    margin-top: 5px;
-    font-size: 14px;
+/* Movie Info Overlay */
+.movie-info {
+    position: absolute;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    width: 100%;
+    padding: 10px;
     text-align: center;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.movie:hover .movie-info {
+    opacity: 1;
 }
