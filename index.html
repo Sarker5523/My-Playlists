@@ -21,11 +21,16 @@
             background: linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.5)); 
             padding: 15px 30px; 
             box-shadow: 0px 4px 6px rgba(0,0,0,0.2); 
+            transition: top 0.3s ease-in-out;
+            position: relative; 
+            width: 100%;
+            z-index: 1000;
+        }
+        .navbar.fixed { 
             position: fixed; 
             top: 0; 
             left: 0; 
             right: 0; 
-            z-index: 1000;
         }
         .logo { 
             display: flex; 
@@ -113,7 +118,7 @@
             margin: 20px 20px 20px 20px; 
         }
         .category-section h2 {
-            font-size: 2em;
+            font-size: 1.5em; 
             color: white;
             display: inline-block;
         }
@@ -157,7 +162,7 @@
             left: 0;
             right: 0;
             padding: 10px;
-            font-size: 1.1em;
+            font-size: 1em; 
             color: white;
             background: rgba(0, 0, 0, 0.5);
             border-radius: 5px 5px 0 0; 
@@ -170,7 +175,7 @@
         /* Mobile Specific */
         @media (max-width: 767px) {
             .nav-links a:first-child { 
-                display: none; /* Hide Home button */
+                display: none; 
             }
             .search-box { 
                 width: 150px; 
@@ -188,8 +193,14 @@
                 flex-shrink: 0;
             }
             .view-all-button {
-                display: block; /* Ensure View All button is visible on mobile */
+                display: block;
                 margin-top: 10px;
+            }
+            .category-section h2 {
+                font-size: 1.2em; 
+            }
+            .video-item span {
+                font-size: 0.9em; 
             }
         }
     </style>
@@ -199,7 +210,20 @@
             const dropdownContent = document.querySelector(".dropdown-content");
             const searchBox = document.getElementById("search-box");
             const searchResults = document.getElementById("search-results");
-
+            const navbar = document.querySelector(".navbar");
+            
+            // Function to handle scroll and fix navbar
+            let lastScrollTop = 0;
+            window.addEventListener("scroll", function() {
+                let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                if (scrollTop > lastScrollTop) {
+                    navbar.classList.add("fixed");
+                } else {
+                    navbar.classList.remove("fixed");
+                }
+                lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; // Prevent negative scroll
+            });
+            
             dropdown.addEventListener("click", function(event) {
                 event.stopPropagation();
                 dropdownContent.style.display = (dropdownContent.style.display === "block") ? "none" : "block";
@@ -224,7 +248,7 @@
                             const categoryList = document.getElementById("category-list");
                             categories.forEach(category => {
                                 const categoryItem = document.createElement("a");
-                                categoryItem.textContent = category; // Removed colon only from dropdown
+                                categoryItem.textContent = category; 
                                 categoryItem.href = `category.html?category=${category}`;  
                                 categoryList.appendChild(categoryItem);
                             });
@@ -234,7 +258,7 @@
                             categories.forEach(category => {
                                 const categorySection = document.createElement("div");
                                 categorySection.classList.add("category-section");
-                                categorySection.innerHTML = `<h2>${category}:</h2>`;  <!-- Keeping the colon only here -->
+                                categorySection.innerHTML = `<h2>${category}:</h2>`; 
                                 
                                 // Create the "View All" button
                                 const viewAllButton = document.createElement("button");
@@ -248,7 +272,7 @@
                                 
                                 // Show only the last 8 items, but in reverse order (last video first)
                                 const categoryVideos = data.filter(item => item.category === category);
-                                const lastVideos = categoryVideos.slice(-8).reverse(); // Reverse the last 8 items
+                                const lastVideos = categoryVideos.slice(-8).reverse(); 
                                 
                                 lastVideos.forEach(item => {
                                     const videoItem = document.createElement("div");
@@ -264,23 +288,33 @@
                                 contentSection.appendChild(categorySection);
                             });
 
-                            // Mobile touch scroll animation
-                            const videoGridMobile = document.querySelector('.video-grid');
-                            let scrollInterval;
-                            videoGridMobile.addEventListener('touchstart', () => {
-                                clearInterval(scrollInterval);  // Stop auto scrolling
+                            // Search Suggestions
+                            searchBox.addEventListener('input', function() {
+                                const query = searchBox.value.toLowerCase();
+                                if (query.length === 0) {
+                                    searchResults.style.display = 'none';
+                                    return;
+                                }
+                                
+                                const filteredData = data.filter(item => {
+                                    return item.name.toLowerCase().includes(query) && item.thumbnail.trim() !== "";
+                                });
+                                
+                                searchResults.innerHTML = '';
+                                filteredData.forEach(item => {
+                                    const div = document.createElement('div');
+                                    div.innerHTML = `
+                                        <img src="${item.thumbnail}" alt="${item.name}">
+                                        <span>${item.name}</span>
+                                    `;
+                                    div.addEventListener('click', () => {
+                                        window.location.href = `search-results.html?query=${item.name}`;
+                                    });
+                                    searchResults.appendChild(div);
+                                });
+                                
+                                searchResults.style.display = filteredData.length > 0 ? 'block' : 'none';
                             });
-
-                            function startScroll() {
-                                scrollInterval = setInterval(() => {
-                                    videoGridMobile.scrollBy({left: 1, top: 0, behavior: 'smooth'});
-                                    if (videoGridMobile.scrollLeft + videoGridMobile.offsetWidth >= videoGridMobile.scrollWidth) {
-                                        videoGridMobile.scrollLeft = 0; // Reset to the first item quickly
-                                    }
-                                }, 10);
-                            }
-
-                            startScroll(); // Start the automatic scroll
                         }
                     });
                 });
