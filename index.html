@@ -23,7 +23,6 @@
             box-shadow: 0px 4px 6px rgba(0,0,0,0.2); 
             transition: top 0.3s ease-in-out;
             position: relative; 
-            width: relative;
             z-index: 1000;
         }
         .navbar.fixed { 
@@ -172,40 +171,6 @@
             text-align: center;
             box-sizing: border-box;
         }
-
-        /* Mobile Specific */
-        @media (max-width: 767px) {
-            .nav-links a:first-child { 
-                display: none; 
-            }
-            .search-box { 
-                width: 150px; 
-                font-size: 0.9em; 
-            }
-            .video-grid {
-                display: flex;
-                overflow-x: auto;
-                flex-wrap: nowrap;
-                gap: 10px;
-                padding: 10px 0;
-            }
-            .video-item {
-                width: 140px;
-                flex-shrink: 0;
-            }
-            .view-all-button {
-                display: inline-block;
-                margin-left: 10px;
-                font-size: 0.9em;
-                padding: 8px 16px;
-            }
-            .category-section h2 {
-                font-size: 1.2em; 
-            }
-            .video-item span {
-                font-size: 0.9em; 
-            }
-        }
     </style>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -214,7 +179,7 @@
             const searchBox = document.getElementById("search-box");
             const searchResults = document.getElementById("search-results");
             const navbar = document.querySelector(".navbar");
-            
+
             // Function to handle scroll and fix navbar
             let lastScrollTop = 0;
             window.addEventListener("scroll", function() {
@@ -226,12 +191,12 @@
                 }
                 lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; // Prevent negative scroll
             });
-            
+
             dropdown.addEventListener("click", function(event) {
                 event.stopPropagation();
                 dropdownContent.style.display = (dropdownContent.style.display === "block") ? "none" : "block";
             });
-            
+
             document.addEventListener("click", function(event) {
                 if (!dropdown.contains(event.target)) {
                     dropdownContent.style.display = "none";
@@ -245,7 +210,7 @@
                         header: true,
                         complete: function(results) {
                             const data = results.data;
-                            
+
                             // Populate Newly Added Section
                             const newlyAddedSection = document.getElementById("newly-added");
                             const newlyAddedVideos = data.slice(-7).reverse(); // Get the last 8 items
@@ -255,8 +220,10 @@
                                 const videoItem = document.createElement("div");
                                 videoItem.classList.add("video-item");
                                 videoItem.innerHTML = `
-                                    <img src="${item.thumbnail}" alt="${item.name}">
-                                    <span>${item.name}</span>
+                                    <a href="video.html?id=${item.id}">
+                                        <img src="${item.thumbnail}" alt="${item.name}">
+                                        <span>${item.name}</span>
+                                    </a>
                                 `;
                                 videoGrid.appendChild(videoItem);
                             });
@@ -267,8 +234,8 @@
                             const categoryList = document.getElementById("category-list");
                             categories.forEach(category => {
                                 const categoryItem = document.createElement("a");
-                                categoryItem.textContent = category; 
-                                categoryItem.href = `category.html?category=${category}`;  
+                                categoryItem.textContent = category;
+                                categoryItem.href = `category.html?category=${category}`;
                                 categoryList.appendChild(categoryItem);
                             });
 
@@ -277,29 +244,30 @@
                             categories.forEach(category => {
                                 const categorySection = document.createElement("div");
                                 categorySection.classList.add("category-section");
-                                categorySection.innerHTML = `<h2>${category}:</h2>`; 
+                                categorySection.innerHTML = `<h2>${category}:</h2>`;
                                 
                                 // Create the "View All" button
                                 const viewAllButton = document.createElement("button");
                                 viewAllButton.classList.add("view-all-button");
                                 viewAllButton.textContent = "View All";
-                                viewAllButton.onclick = () => window.location.href = `category.html?category=${category}`;  
+                                viewAllButton.onclick = () => window.location.href = `category.html?category=${category}`;
                                 categorySection.appendChild(viewAllButton);
 
                                 const videoGrid = document.createElement("div");
                                 videoGrid.classList.add("video-grid");
-                                
 
                                 // Show only the last 8 items, but in reverse order (last video first)
                                 const categoryVideos = data.filter(item => item.category === category);
-                                const lastVideos = categoryVideos.slice(-7).reverse(); 
-                                
+                                const lastVideos = categoryVideos.slice(-7).reverse();
+
                                 lastVideos.forEach(item => {
                                     const videoItem = document.createElement("div");
                                     videoItem.classList.add("video-item");
                                     videoItem.innerHTML = `
-                                        <img src="${item.thumbnail}" alt="${item.name}">
-                                        <span>${item.name}</span>
+                                        <a href="video.html?id=${item.id}">
+                                            <img src="${item.thumbnail}" alt="${item.name}">
+                                            <span>${item.name}</span>
+                                        </a>
                                     `;
                                     videoGrid.appendChild(videoItem);
                                 });
@@ -315,11 +283,11 @@
                                     searchResults.style.display = 'none';
                                     return;
                                 }
-                                
+
                                 const filteredData = data.filter(item => {
                                     return item.name.toLowerCase().includes(query) && item.thumbnail.trim() !== "";
                                 });
-                                
+
                                 searchResults.innerHTML = '';
                                 filteredData.forEach(item => {
                                     const div = document.createElement('div');
@@ -332,7 +300,7 @@
                                     });
                                     searchResults.appendChild(div);
                                 });
-                                
+
                                 searchResults.style.display = filteredData.length > 0 ? 'block' : 'none';
                             });
                         }
@@ -357,7 +325,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Newly Added Section -->
     <div id="newly-added" class="category-section">
         <h2>Newly Added:</h2>
