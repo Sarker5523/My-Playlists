@@ -79,6 +79,7 @@
             font-size: 1em; 
             background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0)); 
             color: white; 
+            width: 200px;
         }
         .search-results { 
             display: none; 
@@ -164,6 +165,31 @@
             text-align: center;
             box-sizing: border-box;
         }
+
+        /* Mobile Specific */
+        @media (max-width: 767px) {
+            .nav-links a:first-child { 
+                display: none; /* Hide Home button */
+            }
+            .search-box { 
+                width: 150px; 
+                font-size: 0.9em; 
+            }
+            .video-grid {
+                display: flex;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                gap: 10px;
+                padding: 10px 0;
+            }
+            .video-item {
+                width: 140px;
+                flex-shrink: 0;
+            }
+            .view-all-button {
+                display: none; /* Hide the View All button for mobile */
+            }
+        }
     </style>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -196,7 +222,7 @@
                             const categoryList = document.getElementById("category-list");
                             categories.forEach(category => {
                                 const categoryItem = document.createElement("a");
-                                categoryItem.textContent = category + ":"; 
+                                categoryItem.textContent = category; // Removed colon
                                 categoryItem.href = `category.html?category=${category}`;  
                                 categoryList.appendChild(categoryItem);
                             });
@@ -206,7 +232,7 @@
                             categories.forEach(category => {
                                 const categorySection = document.createElement("div");
                                 categorySection.classList.add("category-section");
-                                categorySection.innerHTML = `<h2>${category}:</h2>`;
+                                categorySection.innerHTML = `<h2>${category}</h2>`;
                                 
                                 // Create the "View All" button
                                 const viewAllButton = document.createElement("button");
@@ -236,41 +262,23 @@
                                 contentSection.appendChild(categorySection);
                             });
 
-                            // Search functionality
-                            searchBox.addEventListener("input", function() {
-                                const query = searchBox.value.toLowerCase();
-                                searchResults.innerHTML = "";
-                                if (query.length > 0) {
-                                    const filtered = data.filter(row => 
-                                        row.name.toLowerCase().includes(query) && row.thumbnail.trim() !== ""
-                                    );
-                                    filtered.forEach(video => {
-                                        const resultItem = document.createElement("div");
-                                        resultItem.innerHTML = `<img src="${video.thumbnail}" alt="Thumbnail"> ${video.name}`;
-                                        resultItem.onclick = () => alert(`You clicked on ${video.name}`);
-                                        searchResults.appendChild(resultItem);
-                                    });
-                                    searchResults.style.display = "block";
-                                } else {
-                                    searchResults.style.display = "none";
-                                }
+                            // Mobile touch scroll animation
+                            const videoGridMobile = document.querySelector('.video-grid');
+                            let scrollInterval;
+                            videoGridMobile.addEventListener('touchstart', () => {
+                                clearInterval(scrollInterval);  // Stop auto scrolling
                             });
 
-                            // Redirect to search-results.html when "Enter" is pressed
-                            searchBox.addEventListener("keydown", function(event) {
-                                if (event.key === "Enter") {
-                                    const query = searchBox.value.trim();
-                                    if (query) {
-                                        window.location.href = `search-results.html?query=${encodeURIComponent(query)}`;
+                            function startScroll() {
+                                scrollInterval = setInterval(() => {
+                                    videoGridMobile.scrollBy({left: 1, top: 0, behavior: 'smooth'});
+                                    if (videoGridMobile.scrollLeft + videoGridMobile.offsetWidth >= videoGridMobile.scrollWidth) {
+                                        videoGridMobile.scrollLeft = 0; // Reset to the first item quickly
                                     }
-                                }
-                            });
+                                }, 10);
+                            }
 
-                            document.addEventListener("click", function(event) {
-                                if (!searchBox.contains(event.target) && !searchResults.contains(event.target)) {
-                                    searchResults.style.display = "none";
-                                }
-                            });
+                            startScroll(); // Start the automatic scroll
                         }
                     });
                 });
