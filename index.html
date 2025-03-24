@@ -116,9 +116,6 @@
         }
         .category-section {
             margin: 20px 20px 20px 20px; 
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
         .category-section h2 {
             font-size: 1.5em; 
@@ -177,28 +174,12 @@
 
         /* Mobile Specific */
         @media (max-width: 767px) {
-            .nav-links a, .dropdown {
-                font-size: 0.9em; /* Smaller navbar items */
-                margin-left: 15px;
-            }
-            .logo {
-                font-size: 1.2em; /* Smaller logo font */
+            .nav-links a:first-child { 
+                display: none; 
             }
             .search-box { 
                 width: 150px; 
                 font-size: 0.9em; 
-            }
-            .category-section {
-                flex-direction: column;
-                align-items: flex-start;
-                margin-bottom: 15px; /* Reduce margin between categories */
-            }
-            .category-section h2 {
-                font-size: 1.2em; 
-            }
-            .view-all-button {
-                margin-left: 10px;
-                display: inline-block;
             }
             .video-grid {
                 display: flex;
@@ -210,6 +191,18 @@
             .video-item {
                 width: 140px;
                 flex-shrink: 0;
+            }
+            .view-all-button {
+                display: inline-block;
+                margin-left: 10px;
+                font-size: 0.9em;
+                padding: 8px 16px;
+            }
+            .category-section h2 {
+                font-size: 1.2em; 
+            }
+            .video-item span {
+                font-size: 0.9em; 
             }
         }
     </style>
