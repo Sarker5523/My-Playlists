@@ -246,23 +246,38 @@
                         complete: function(results) {
                             const data = results.data;
                             
-                            // Populate categories
-                            const categories = [...new Set(data.map(row => row.category).filter(Boolean))];
-                            const categoryList = document.getElementById("category-list");
-                            categories.forEach(category => {
-                                const categoryItem = document.createElement("a");
-                                categoryItem.textContent = category; 
-                                categoryItem.href = `category.html?category=${category}`;  
-                                categoryList.appendChild(categoryItem);
+
+                            // Newly Added Section
+                            const newlyAddedSection = document.createElement("div");
+                            newlyAddedSection.classList.add("category-section");
+                            newlyAddedSection.innerHTML = `<h2>Newly Added:</h2>`;
+
+                            // Create the "Newly Added" section without a View All button
+                            const newlyAddedGrid = document.createElement("div");
+                            newlyAddedGrid.classList.add("video-grid");
+
+                            // Show only the last 7 items, in reverse order (newest video first)
+                            const lastVideos = data.slice(-7).reverse(); // Only show the last 7 items
+                            lastVideos.forEach(item => {
+                                const videoItem = document.createElement("div");
+                                videoItem.classList.add("video-item");
+                                videoItem.innerHTML = `
+                                    <img src="${item.thumbnail}" alt="${item.name}">
+                                    <span>${item.name}</span>
+                                `;
+                                newlyAddedGrid.appendChild(videoItem);
                             });
 
-                            // Populate the content by categories
-                            const contentSection = document.getElementById("content");
+                            newlyAddedSection.appendChild(newlyAddedGrid);
+                            document.getElementById("content").appendChild(newlyAddedSection);
+
+                            // Populate categories
+                            const categories = [...new Set(data.map(row => row.category).filter(Boolean))];
                             categories.forEach(category => {
                                 const categorySection = document.createElement("div");
                                 categorySection.classList.add("category-section");
                                 categorySection.innerHTML = `<h2>${category}:</h2>`; 
-                                
+
                                 // Create the "View All" button
                                 const viewAllButton = document.createElement("button");
                                 viewAllButton.classList.add("view-all-button");
@@ -272,12 +287,11 @@
 
                                 const videoGrid = document.createElement("div");
                                 videoGrid.classList.add("video-grid");
-                                
-                                // Show only the last 8 items, but in reverse order (last video first)
+
+                                // Show only the last 7 items, in reverse order (last video first)
                                 const categoryVideos = data.filter(item => item.category === category);
-                                const lastVideos = categoryVideos.slice(-8).reverse(); 
-                                
-                                lastVideos.forEach(item => {
+                                const lastCategoryVideos = categoryVideos.slice(-7).reverse(); // Change here to 7
+                                lastCategoryVideos.forEach(item => {
                                     const videoItem = document.createElement("div");
                                     videoItem.classList.add("video-item");
                                     videoItem.innerHTML = `
@@ -288,9 +302,9 @@
                                 });
 
                                 categorySection.appendChild(videoGrid);
-                                contentSection.appendChild(categorySection);
+                                document.getElementById("content").appendChild(categorySection);
                             });
-
+                            
                             // Search Suggestions
                             searchBox.addEventListener('input', function() {
                                 const query = searchBox.value.toLowerCase();
