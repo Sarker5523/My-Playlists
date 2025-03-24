@@ -320,6 +320,142 @@
       }
     }
   </style>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const dropdown = document.querySelector(".dropdown");
+      const dropdownContent = document.querySelector(".dropdown-content");
+      const searchBox = document.getElementById("search-box");
+      const searchResults = document.getElementById("search-results");
+      const navbar = document.querySelector(".navbar");
+
+      // Function to handle scroll and fix navbar
+      let lastScrollTop = 0;
+      window.addEventListener("scroll", function() {
+        let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        if (scrollTop > lastScrollTop) {
+          navbar.classList.add("fixed");
+        } else {
+          navbar.classList.remove("fixed");
+        }
+        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; // Prevent negative scroll
+      });
+
+      dropdown.addEventListener("click", function(event) {
+        event.stopPropagation();
+        dropdownContent.style.display = (dropdownContent.style.display === "block") ? "none" : "block";
+      });
+
+      document.addEventListener("click", function(event) {
+        if (!dropdown.contains(event.target)) {
+          dropdownContent.style.display = "none";
+        }
+      });
+
+      fetch("https://docs.google.com/spreadsheets/d/1xsz1l9reLyakcG1cQBZjytMJ6KZF0zX8Zac4a_YE4C0/export?format=csv")
+        .then(response => response.text())
+        .then(csvText => {
+          Papa.parse(csvText, {
+            header: true,
+            complete: function(results) {
+              const data = results.data;
+
+              // Populate Newly Added Section
+              const newlyAddedSection = document.getElementById("newly-added");
+              const newlyAddedVideos = data.slice(-7).reverse(); // Get the last 8 items
+              const videoGrid = document.createElement("div");
+              videoGrid.classList.add("video-grid");
+              newlyAddedVideos.forEach(item => {
+                const videoItem = document.createElement("div");
+                videoItem.classList.add("video-item");
+                videoItem.innerHTML = `
+                  <a href="video.html?id=${item.id}">
+                    <img src="${item.thumbnail}" alt="${item.name}">
+                    <span>${item.name}</span>
+                  </a>
+                `;
+                videoGrid.appendChild(videoItem);
+              });
+              newlyAddedSection.appendChild(videoGrid);
+
+              // Populate categories
+              const categories = [...new Set(data.map(row => row.category).filter(Boolean))];
+              const categoryList = document.getElementById("category-list");
+              categories.forEach(category => {
+                const categoryItem = document.createElement("a");
+                categoryItem.textContent = category;
+                categoryItem.href = `category.html?category=${category}`;
+                categoryList.appendChild(categoryItem);
+              });
+
+              // Populate the content by categories
+              const contentSection = document.getElementById("content");
+              categories.forEach(category => {
+                const categorySection = document.createElement("div");
+                categorySection.classList.add("category-section");
+                categorySection.innerHTML = `<h2>${category}:</h2>`;
+                
+                // Create the "View All" button
+                const viewAllButton = document.createElement("button");
+                viewAllButton.classList.add("view-all-button");
+                viewAllButton.textContent = "View All";
+                viewAllButton.onclick = () => window.location.href = `category.html?category=${category}`;
+                categorySection.appendChild(viewAllButton);
+
+                const videoGrid = document.createElement("div");
+                videoGrid.classList.add("video-grid");
+
+                // Show only the last 8 items, but in reverse order (last video first)
+                const categoryVideos = data.filter(item => item.category === category);
+                const lastVideos = categoryVideos.slice(-7).reverse();
+
+                lastVideos.forEach(item => {
+                  const videoItem = document.createElement("div");
+                  videoItem.classList.add("video-item");
+                  videoItem.innerHTML = `
+                    <a href="video.html?id=${item.id}">
+                      <img src="${item.thumbnail}" alt="${item.name}">
+                      <span>${item.name}</span>
+                    </a>
+                  `;
+                  videoGrid.appendChild(videoItem);
+                });
+
+                categorySection.appendChild(videoGrid);
+                contentSection.appendChild(categorySection);
+              });
+
+              // Search Suggestions
+              searchBox.addEventListener('input', function() {
+                const query = searchBox.value.toLowerCase();
+                if (query.length === 0) {
+                  searchResults.style.display = 'none';
+                  return;
+                }
+
+                const filteredData = data.filter(item => {
+                  return item.name.toLowerCase().includes(query) && item.thumbnail.trim() !== "";
+                });
+
+                searchResults.innerHTML = '';
+                filteredData.forEach(item => {
+                  const div = document.createElement('div');
+                  div.innerHTML = `
+                    <img src="${item.thumbnail}" alt="${item.name}">
+                    <span>${item.name}</span>
+                  `;
+                  div.addEventListener('click', () => {
+                    window.location.href = `search-results.html?query=${item.name}`;
+                  });
+                  searchResults.appendChild(div);
+                });
+
+                searchResults.style.display = filteredData.length > 0 ? 'block' : 'none';
+              });
+            }
+          });
+        });
+    });
+  </script>
 </head>
 <body>
   <!-- Navbar -->
@@ -381,145 +517,4 @@
 
       // Highlight the current episode button
       const buttons = episodeList.getElementsByTagName('button');
-      for (let button of buttons) {
-        if (button.dataset.episodeId === video.episode_id) {
-          button.classList.add('active');
-        } else {
-          button.classList.remove('active');
-        }
-      }
-    }
-
-    function loadEpisodes(episodes, currentEpisodeId) {
-      episodeList.innerHTML = '';
-      episodes.forEach(episode => {
-        const button = document.createElement('button');
-        button.innerText = episode.episode_name;
-        button.dataset.episodeId = episode.episode_id;
-        button.onclick = () => {
-          loadVideo(episode);
-        };
-        if (episode.episode_id === currentEpisodeId) {
-          button.classList.add('active');
-        }
-        episodeList.appendChild(button);
-      });
-    }
-
-    function parseCSV(text) {
-      const lines = text.split('\n').map(line => line.trim()).filter(line => line);
-      const headers = lines.shift().split(',').map(header => header.trim());
-      const result = [];
-
-      lines.forEach(line => {
-        const currentline = line.split(',').map(value => value.trim());
-        if (currentline.length === headers.length) {
-          const obj = {};
-          headers.forEach((header, index) => {
-            obj[header] = currentline[index];
-          });
-          result.push(obj);
-        }
-      });
-
-      return result;
-    }
-
-    fetch('https://docs.google.com/spreadsheets/d/1xsz1l9reLyakcG1cQBZjytMJ6KZF0zX8Zac4a_YE4C0/export?format=csv')
-      .then(response => response.text())
-      .then(text => {
-        const data = parseCSV(text);
-        const videoId = new URLSearchParams(window.location.search).get('id');
-        const series = data.find(v => v.id === videoId);
-        if (series) {
-          const currentEpisode = series;
-          loadVideo(currentEpisode);
-          const episodes = data.filter(v => v.id === series.id);
-          loadEpisodes(episodes, currentEpisode.episode_id);
-
-          // Load and display trailer
-          const trailerEmbedCode = series.trailer;
-          if (trailerEmbedCode) {
-            trailerIframeContainer.innerHTML = trailerEmbedCode;
-            trailerContainer.style.display = 'block';
-          }
-        } else {
-          document.getElementById('video-title').innerText = "Video not found";
-        }
-
-        // Populate categories
-        const categories = [...new Set(data.map(row => row.category).filter(Boolean))];
-        categories.forEach(category => {
-          const categoryItem = document.createElement('a');
-          categoryItem.textContent = category;
-          categoryItem.href = `category.html?category=${category}`;
-          categoryList.appendChild(categoryItem);
-        });
-      })
-      .catch(error => {
-        console.error('Error loading video data:', error);
-        document.getElementById('video-title').innerText = "Error loading video";
-      });
-
-    function handleSearch() {
-      const query = searchInput.value.toLowerCase();
-      fetch('https://raw.githubusercontent.com/Sarker5523/My-Playlists/main/tv_series.csv')
-        .then(response => response.text())
-        .then(text => {
-          const data = parseCSV(text);
-          const filteredVideos = data.filter(video => video.name.toLowerCase().includes(query) && video.thumbnail.trim() !== "");
-          searchResultsContainer.style.display = 'block';
-          searchResultsContainer.innerHTML = '';
-          filteredVideos.slice(0, 5).forEach(video => {
-            const suggestionItem = document.createElement('div');
-            suggestionItem.innerHTML = `
-              <img src="${video.thumbnail}" alt="${video.name}">
-              ${video.name}
-            `;
-            suggestionItem.onclick = () => {
-              window.location.href = `search-results.html?q=${encodeURIComponent(query)}`;
-            };
-            searchResultsContainer.appendChild(suggestionItem);
-          });
-        });
-    }
-    function handleEnter(event) {
-      if (event.key === "Enter") {
-        handleSearch();
-      }
-    }
-
-    searchInput.addEventListener('input', handleSearch);
-    searchInput.addEventListener('keydown', handleEnter);
-
-    document.addEventListener("DOMContentLoaded", function() {
-      const dropdown = document.querySelector(".dropdown");
-      const dropdownContent = document.querySelector(".dropdown-content");
-      const navbar = document.querySelector(".navbar");
-
-      // Function to handle scroll and fix navbar
-      let lastScrollTop = 0;
-      window.addEventListener("scroll", function() {
-        let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        if (scrollTop > lastScrollTop) {
-          navbar.classList.add("fixed");
-        } else {
-          navbar.classList.remove("fixed");
-        }
-        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; // Prevent negative scroll
-      });
-
-      dropdown.addEventListener("click", function(event) {
-        event.stopPropagation();
-        dropdownContent.style.display = (dropdownContent.style.display === "block") ? "none" : "block";
-      });
-
-      document.addEventListener("click", function(event) {
-        if (!dropdown.contains(event.target)) {
-          dropdownContent.style.display = "none";
-        }
-      });
-    });
-  </script>
-</body>
-</html>
+      for (let button of buttons)
