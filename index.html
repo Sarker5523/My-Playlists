@@ -172,130 +172,25 @@
             box-sizing: border-box;
         }
         @media (max-width: 767px) {
-    /* Adjust the width of the search suggestions box */
-    .search-results {
-        width: 200px; /* Reduce width for smaller screens */
-        max-height: 200px; /* Reduce the max height for better fit */
-    }
-
-    /* Adjust font size in search suggestions */
-    .search-results div {
-        font-size: 0.9em; /* Reduce font size */
-    }
-
-    /* Adjust search box size for mobile */
-    .search-box {
-        width: 120px; /* Adjust width for smaller screens */
-        font-size: 0.9em; /* Reduce font size */
-    }
-
-    /* Adjust navigation bar items size */
-    .navbar .nav-links a {
-        font-size: 0.9em; /* Slightly smaller font size */
-    }
-
-    /* Adjust the video item size */
-    .video-item {
-        width: 120px; /* Smaller video item size */
-    }
-
-    /* Adjust category names font size for mobile */
-    .category-section h2 {
-        font-size: 1.2em; /* Slightly smaller category name */
-    }
-
-    /* Adjust the View All button for mobile */
-    .view-all-button {
-        font-size: 0.9em; /* Smaller View All button text */
-        padding: 6px 12px; /* Smaller padding for the button */
-    }
-
-    /* Video items in a single row with scrollable behavior */
-    .video-grid {
-        display: flex;
-        overflow-x: auto;
-        gap: 10px;
-        padding: 10px 0;
-    }
-
-    /* Video item adjustments for mobile */
-    .video-item {
-        flex-shrink: 0; /* Prevent shrinking */
-        width: 140px; /* Adjust video item width */
-    }
-
-    /* Adjust the search bar container width */
-    .search-container {
-        width: 100%;
-        margin-left: 0;
-    }
-}
-@media (max-width: 1024px) {
-    /* Slightly adjust search suggestions width */
-    .search-results {
-        width: 250px; /* Adjust width */
-        max-height: 250px; /* Adjust max-height */
-    }
-
-    /* Adjust font size in search suggestions */
-    .search-results div {
-        font-size: 1em; /* Adjust font size */
-    }
-
-    /* Adjust search box size */
-    .search-box {
-        width: 200px; /* Adjust width for tablet */
-        font-size: 1em; /* Keep font size similar */
-    }
-
-    /* Adjust navigation bar items font size */
-    .navbar .nav-links a {
-        font-size: 1em; /* Adjust font size */
-    }
-
-    /* Video item adjustments for tablet */
-    .video-item {
-        width: 160px; /* Adjust video item width */
-    }
-
-    /* View All button adjustments */
-    .view-all-button {
-        font-size: 1em; /* Maintain button size */
-    }
-}
-@media (min-width: 1025px) {
-    /* Keep the default search suggestions size as it is */
-    .search-results {
-        width: 250px; /* Default width */
-        max-height: 300px; /* Max height for desktop */
-    }
-
-    /* Default font size for search suggestions */
-    .search-results div {
-        font-size: 1em;
-    }
-
-    /* Default search box width and font size */
-    .search-box {
-        width: 250px;
-        font-size: 1em;
-    }
-
-    /* Default video item width */
-    .video-item {
-        width: 220px;
-    }
-
-    /* Default View All button size */
-    .view-all-button {
-        font-size: 1em;
-    }
-
-    /* Category name font size for desktop */
-    .category-section h2 {
-        font-size: 1.5em; /* Default category font size */
-    }
-}
+            .nav-links a:first-child { 
+                display: none; 
+            }
+            .search-box { 
+                width: 150px; 
+                font-size: 0.9em; 
+            }
+            .video-grid {
+                display: flex;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                gap: 10px;
+                padding: 10px 0;
+            }
+            .video-item {
+                width: 140px;
+                flex-shrink: 0;
+            }
+        }
     </style>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
