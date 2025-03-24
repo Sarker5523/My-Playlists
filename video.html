@@ -4,232 +4,252 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Video Details</title>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-  <script defer src="script.js"></script>
   <style>
-    body { 
-        font-family: Arial, sans-serif; 
-        margin: 0; 
-        padding: 0; 
-        background: #222; 
-        color: white; 
-    }
+    /* Navigation bar styles */
     .navbar { 
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-        background: linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.5)); 
-        padding: 15px 30px; 
-        box-shadow: 0px 4px 6px rgba(0,0,0,0.2); 
-        transition: top 0.3s ease-in-out;
-        position: relative; 
-        z-index: 1000;
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.5)); 
+      padding: 15px 30px; 
+      box-shadow: 0px 4px 6px rgba(0,0,0,0.2); 
+      transition: top 0.3s ease-in-out;
+      position: relative; 
+      z-index: 1000;
     }
     .navbar.fixed { 
-        position: fixed; 
-        top: 0; 
-        left: 0; 
-        right: 0; 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      right: 0; 
     }
     .logo { 
-        display: flex; 
-        align-items: center; 
-        cursor: pointer; 
-        font-size: 1.5em; 
-        font-weight: bold; 
-        color: white; 
+      display: flex; 
+      align-items: center; 
+      cursor: pointer; 
+      font-size: 1.5em; 
+      font-weight: bold; 
+      color: white; 
     }
     .nav-links { 
-        display: flex; 
-        align-items: center; 
+      display: flex; 
+      align-items: center; 
     }
     .nav-links a, .dropdown { 
-        margin-left: 20px; 
-        color: white; 
-        text-decoration: none; 
-        cursor: pointer; 
-        font-size: 1.1em; 
+      margin-left: 20px; 
+      color: white; 
+      text-decoration: none; 
+      cursor: pointer; 
+      font-size: 1.1em; 
     }
     .dropdown-content { 
-        display: none; 
-        position: absolute; 
-        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.5)); 
-        color: white; 
-        top: 50px; 
-        left: auto; 
-        min-width: 150px; 
-        box-shadow: 0px 4px 6px rgba(0,0,0,0.2); 
-        border-radius: 5px; 
-        overflow: hidden; 
+      display: none; 
+      position: absolute; 
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.5)); 
+      color: white; 
+      top: 50px; 
+      left: auto; 
+      min-width: 150px; 
+      box-shadow: 0px 4px 6px rgba(0,0,0,0.2); 
+      border-radius: 5px; 
+      overflow: hidden; 
     }
     .dropdown-content a { 
-        display: block; 
-        padding: 10px; 
-        text-decoration: none; 
-        color: white; 
-        transition: background 0.3s; 
+      display: block; 
+      padding: 10px; 
+      text-decoration: none; 
+      color: white; 
+      transition: background 0.3s; 
     }
     .dropdown-content a:hover { 
-        background-color: #ddd; 
+      background-color: #ddd; 
     }
     .search-container { 
-        position: relative; 
-        margin-left: 20px; 
+      position: relative; 
+      margin-left: 20px; 
     }
     .search-box { 
-        padding: 8px; 
-        border-radius: 5px; 
-        border: 1px solid white; 
-        font-size: 1em; 
-        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0)); 
-        color: white; 
-        width: 150px;
+      padding: 8px; 
+      border-radius: 5px; 
+      border: 1px solid white; 
+      font-size: 1em; 
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0)); 
+      color: white; 
+      width: 150px;
     }
     .search-results { 
-        display: none; 
-        position: absolute; 
-        top: 100%; 
-        left: 0; 
-        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.5)); 
-        color: white; 
-        width: 180px; 
-        font-size: 0.95em; 
-        max-height: 250px; 
-        overflow-y: auto; 
-        box-shadow: 0px 4px 6px rgba(0,0,0,0.2); 
-        border-radius: 5px; 
+      display: none; 
+      position: absolute; 
+      top: 100%; 
+      left: 0; 
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.5)); 
+      color: white; 
+      width: 180px; 
+      font-size: 0.95em; 
+      max-height: 250px; 
+      overflow-y: auto; 
+      box-shadow: 0px 4px 6px rgba(0,0,0,0.2); 
+      border-radius: 5px; 
     }
     .search-results div { 
-        display: flex; 
-        align-items: center; 
-        padding: 10px; 
-        cursor: pointer; 
-        transition: background 0.3s; 
+      display: flex; 
+      align-items: center; 
+      padding: 10px; 
+      cursor: pointer; 
+      transition: background 0.3s; 
     }
     .search-results div:hover { 
-        background: #ddd; 
+      background: #ddd; 
     }
     .search-results img { 
-        width: 50px; 
-        margin-right: 10px; 
-        border-radius: 5px; 
+      width: 50px; 
+      margin-right: 10px; 
+      border-radius: 5px; 
     }
     .category-section {
-        margin: 20px 20px 20px 20px; 
+      margin: 20px 20px 20px 20px; 
     }
     .category-section h2 {
-        font-size: 1.5em; 
-        color: white;
-        display: inline-block;
+      font-size: 1.5em; 
+      color: white;
+      display: inline-block;
     }
     .view-all-button {
-        display: inline-block;
-        margin-left: 20px;
-        padding: 8px 16px;
-        font-size: 1em;
-        color: white;
-        background: rgba(0, 0, 0, 0.7);
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
+      display: inline-block;
+      margin-left: 20px;
+      padding: 8px 16px;
+      font-size: 1em;
+      color: white;
+      background: rgba(0, 0, 0, 0.7);
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
     }
     .view-all-button:hover {
-        background: rgba(0, 0, 0, 0.9);
+      background: rgba(0, 0, 0, 0.9);
     }
     .video-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 15px;
-        justify-content: flex-start;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: flex-start;
     }
     .video-item {
-        position: relative;
-        width: 220px;
-        background-color: transparent;
-        text-align: center;
-        transition: background-color 0.3s;
+      position: relative;
+      width: 220px;
+      background-color: transparent;
+      text-align: center;
+      transition: background-color 0.3s;
     }
     .video-item:hover {
-        background-color: rgba(0, 0, 0, 0.3);
+      background-color: rgba(0, 0, 0, 0.3);
     }
     .video-item img {
-        width: 100%;
-        border-radius: 8px;
+      width: 100%;
+      border-radius: 8px;
     }
     .video-item span {
-        position: absolute;
-        top: 0; 
-        left: 0;
-        right: 0; 
-        padding: 10px;
-        font-size: 1em; 
-        color: white;
-        background: rgba(0, 0, 0, 0.5);
-        border-radius: 5px 5px 0 0; 
-        z-index: 1;
-        width: 100%;
-        text-align: center;
-        box-sizing: border-box;
+      position: absolute;
+      top: 0; 
+      left: 0;
+      right: 0; 
+      padding: 10px;
+      font-size: 1em; 
+      color: white;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 5px 5px 0 0; 
+      z-index: 1;
+      width: 100%;
+      text-align: center;
+      box-sizing: border-box;
     }
-    @media (max-width: 767px) {
-        .nav-links a:first-child { 
-            display: none; 
-        }
-        .search-box { 
-            width: 150px; 
-            font-size: 0.9em; 
-        }
-        .video-grid {
-            display: flex;
-            overflow-x: auto;
-            flex-wrap: nowrap;
-            gap: 10px;
-            padding: 10px 0;
-        }
-        .video-item {
-            width: 140px;
-            flex-shrink: 0;
-        }
+    /* Keep existing media queries */
+    @media (max-width: 600px) {
+      .video-details {
+        max-width: 80%;
+        padding: 2px;
+        height: auto;
+      }
+      .video-details h2 {
+        font-size: 20px;
+        font-weight: 500;
+      }
+      .video-container, .trailer-container {
+        max-width: 94%;
+        padding: 10px;
+        height: auto;
+      }
+      .iframe-container {
+        width: 94%;
+        height: auto;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.8);
+      }
+    }
+    @media (min-width: 601px) and (max-width: 1200px) {
+      .video-details {
+        max-width: 75%;
+        padding: 20px;
+        height: auto;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .video-container, .trailer-container {
+        max-width: 75%;
+        padding: 20px;
+        height: auto;
+        margin-left: auto;
+        margin-right: auto;
+      }
+    }
+    @media (min-width: 1201px) {
+      .video-container, .video-details, .trailer-container {
+        max-width: 60%;
+        padding: 20px;
+        height: auto;
+        margin-left: auto;
+        margin-right: auto;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- Replaced Navigation Bar -->
+  <!-- Navigation Bar -->
   <div class="navbar">
-    <div class="logo" onclick="window.location.href='index.html'">
-      MPlix
-    </div>
+    <div class="logo" onclick="window.location.href='index.html'">MPlix</div>
     <div class="nav-links">
       <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
       <div class="dropdown">
-        <a>Categories</a>
-        <div class="dropdown-content" id="category-list"></div>
+        <a href="#">Categories</a>
+        <div class="dropdown-content">
+          <a href="category.html?category=Action">Action</a>
+          <a href="category.html?category=Drama">Drama</a>
+          <a href="category.html?category=Comedy">Comedy</a>
+        </div>
       </div>
-      <div class="search-container">
-        <input type="text" id="search-box" class="search-box" placeholder="Search...">
-        <div id="search-results" class="search-results"></div>
-      </div>
+    </div>
+    <div class="search-container">
+      <input type="text" id="search-box" class="search-box" placeholder="Search..." oninput="handleSearch()" onkeydown="handleEnter(event)">
+      <div id="search-results" class="search-results"></div>
     </div>
   </div>
 
-  <!-- Video Container and Content -->
+  <header>
+    <div class="home-btn" onclick="window.location.href='index.html'">Home</div>
+    <div class="mplix-title" style="display: flex; align-items: center;">
+      <h1 style="color: white; margin: 0;">MPlix</h1>
+      <div class="play-button" style="margin-left: 10px;"></div>
+    </div>
+    <input type="text" id="search-input" class="search-bar" placeholder="Search..." oninput="handleSearch()" onkeydown="handleEnter(event)">
+    <div id="search-suggestions" class="search-suggestions"></div>
+  </header>
+
   <div class="video-container" id="video-container">
     <div class="iframe-container" id="iframe-container" style="display: none;"></div>
   </div>
-
-  <div class="video-details">
-    <h2 id="video-title"></h2>
-    <div class="episode-list" id="episode-list"></div>
-  </div>
-
-  <div class="trailer-container" id="trailer-container" style="display: none;">
-    <div class="iframe-container" id="trailer-iframe-container"></div>
-  </div>
-
-  <script>
-    // Script content remains the same as per your original request
-  </script>
 
 </body>
 </html>
