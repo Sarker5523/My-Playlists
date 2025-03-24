@@ -3,104 +3,298 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netflix Clone</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title>MPlix - Home</title>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script defer src="script.js"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background: #222; 
+            color: white; 
+        }
+        .navbar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.5)); 
+            padding: 15px 30px; 
+            box-shadow: 0px 4px 6px rgba(0,0,0,0.2); 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            z-index: 1000;
+        }
+        .logo { 
+            display: flex; 
+            align-items: center; 
+            cursor: pointer; 
+            font-size: 1.5em; 
+            font-weight: bold; 
+            color: white; 
+        }
+        .nav-links { 
+            display: flex; 
+            align-items: center; 
+        }
+        .nav-links a, .dropdown { 
+            margin-left: 20px; 
+            color: white; 
+            text-decoration: none; 
+            cursor: pointer; 
+            font-size: 1.1em; 
+        }
+        .dropdown-content { 
+            display: none; 
+            position: absolute; 
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.5)); 
+            color: white; 
+            top: 50px; 
+            left: auto; 
+            min-width: 150px; 
+            box-shadow: 0px 4px 6px rgba(0,0,0,0.2); 
+            border-radius: 5px; 
+            overflow: hidden; 
+        }
+        .dropdown-content a { 
+            display: block; 
+            padding: 10px; 
+            text-decoration: none; 
+            color: white; 
+            transition: background 0.3s; 
+        }
+        .dropdown-content a:hover { 
+            background-color: #ddd; 
+        }
+        .search-container { 
+            position: relative; 
+            margin-left: 20px; 
+        }
+        .search-box { 
+            padding: 8px; 
+            border-radius: 5px; 
+            border: 1px solid white; 
+            font-size: 1em; 
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0)); 
+            color: white; 
+        }
+        .search-results { 
+            display: none; 
+            position: absolute; 
+            top: 100%; 
+            left: 0; 
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.5)); 
+            color: white; 
+            width: 250px; 
+            max-height: 250px; 
+            overflow-y: auto; 
+            box-shadow: 0px 4px 6px rgba(0,0,0,0.2); 
+            border-radius: 5px; 
+        }
+        .search-results div { 
+            display: flex; 
+            align-items: center; 
+            padding: 10px; 
+            cursor: pointer; 
+            transition: background 0.3s; 
+        }
+        .search-results div:hover { 
+            background: #ddd; 
+        }
+        .search-results img { 
+            width: 50px; 
+            margin-right: 10px; 
+            border-radius: 5px; 
+        }
+        .category-section {
+            margin: 60px 20px 20px 20px; 
+        }
+        .category-section h2 {
+            font-size: 2em;
+            color: white;
+            display: inline-block;
+        }
+        .view-all-button {
+            display: inline-block;
+            margin-left: 20px;
+            padding: 8px 16px;
+            font-size: 1em;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .view-all-button:hover {
+            background: rgba(0, 0, 0, 0.9);
+        }
+        .video-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .video-item {
+            position: relative;
+            width: 200px;
+            background-color: transparent;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        .video-item:hover {
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+        .video-item img {
+            width: 100%;
+            border-radius: 8px;
+        }
+        .video-item span {
+            position: absolute;
+            top: 0; 
+            left: 0;
+            right: 0;
+            padding: 10px;
+            font-size: 1.1em;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 5px 5px 0 0; 
+            z-index: 1;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const dropdown = document.querySelector(".dropdown");
+            const dropdownContent = document.querySelector(".dropdown-content");
+            const searchBox = document.getElementById("search-box");
+            const searchResults = document.getElementById("search-results");
+
+            dropdown.addEventListener("click", function(event) {
+                event.stopPropagation();
+                dropdownContent.style.display = (dropdownContent.style.display === "block") ? "none" : "block";
+            });
+            
+            document.addEventListener("click", function(event) {
+                if (!dropdown.contains(event.target)) {
+                    dropdownContent.style.display = "none";
+                }
+            });
+
+            fetch("https://docs.google.com/spreadsheets/d/1xsz1l9reLyakcG1cQBZjytMJ6KZF0zX8Zac4a_YE4C0/export?format=csv")
+                .then(response => response.text())
+                .then(csvText => {
+                    Papa.parse(csvText, {
+                        header: true,
+                        complete: function(results) {
+                            const data = results.data;
+                            
+                            // Populate categories
+                            const categories = [...new Set(data.map(row => row.category).filter(Boolean))];
+                            const categoryList = document.getElementById("category-list");
+                            categories.forEach(category => {
+                                const categoryItem = document.createElement("a");
+                                categoryItem.textContent = category + ":"; 
+                                categoryItem.href = `category.html?category=${category}`;  
+                                categoryList.appendChild(categoryItem);
+                            });
+
+                            // Populate the content by categories
+                            const contentSection = document.getElementById("content");
+                            categories.forEach(category => {
+                                const categorySection = document.createElement("div");
+                                categorySection.classList.add("category-section");
+                                categorySection.innerHTML = `<h2>${category}:</h2>`;
+                                
+                                // Create the "View All" button
+                                const viewAllButton = document.createElement("button");
+                                viewAllButton.classList.add("view-all-button");
+                                viewAllButton.textContent = "View All";
+                                viewAllButton.onclick = () => window.location.href = `category.html?category=${category}`;  
+                                categorySection.appendChild(viewAllButton);
+
+                                const videoGrid = document.createElement("div");
+                                videoGrid.classList.add("video-grid");
+                                
+                                // Show only the last 8 items, but in reverse order (last video first)
+                                const categoryVideos = data.filter(item => item.category === category);
+                                const lastVideos = categoryVideos.slice(-8).reverse(); // Reverse the last 8 items
+                                
+                                lastVideos.forEach(item => {
+                                    const videoItem = document.createElement("div");
+                                    videoItem.classList.add("video-item");
+                                    videoItem.innerHTML = `
+                                        <img src="${item.thumbnail}" alt="${item.name}">
+                                        <span>${item.name}</span>
+                                    `;
+                                    videoGrid.appendChild(videoItem);
+                                });
+
+                                categorySection.appendChild(videoGrid);
+                                contentSection.appendChild(categorySection);
+                            });
+
+                            // Search functionality
+                            searchBox.addEventListener("input", function() {
+                                const query = searchBox.value.toLowerCase();
+                                searchResults.innerHTML = "";
+                                if (query.length > 0) {
+                                    const filtered = data.filter(row => 
+                                        row.name.toLowerCase().includes(query) && row.thumbnail.trim() !== ""
+                                    );
+                                    filtered.forEach(video => {
+                                        const resultItem = document.createElement("div");
+                                        resultItem.innerHTML = `<img src="${video.thumbnail}" alt="Thumbnail"> ${video.name}`;
+                                        resultItem.onclick = () => alert(`You clicked on ${video.name}`);
+                                        searchResults.appendChild(resultItem);
+                                    });
+                                    searchResults.style.display = "block";
+                                } else {
+                                    searchResults.style.display = "none";
+                                }
+                            });
+
+                            // Redirect to search-results.html when "Enter" is pressed
+                            searchBox.addEventListener("keydown", function(event) {
+                                if (event.key === "Enter") {
+                                    const query = searchBox.value.trim();
+                                    if (query) {
+                                        window.location.href = `search-results.html?query=${encodeURIComponent(query)}`;
+                                    }
+                                }
+                            });
+
+                            document.addEventListener("click", function(event) {
+                                if (!searchBox.contains(event.target) && !searchResults.contains(event.target)) {
+                                    searchResults.style.display = "none";
+                                }
+                            });
+                        }
+                    });
+                });
+        });
+    </script>
 </head>
 <body>
-    <header>
-        <div class="header-container">
-            <div class="logo">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" alt="Netflix">
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="logo" onclick="window.location.href = 'index.html'">MPlix</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <div class="dropdown">
+                Categories
+                <div class="dropdown-content" id="category-list"></div>
             </div>
-            <nav class="main-nav">
-                <ul>
-                    <li><a href="#" class="active">Home</a></li>
-                    <li><a href="#">TV Shows</a></li>
-                    <li><a href="#">Movies</a></li>
-                    <li><a href="#">New & Popular</a></li>
-                    <li><a href="#">My List</a></li>
-                </ul>
-            </nav>
-            <div class="header-right">
-                <div class="search">
-                    <i class="fas fa-search"></i>
-                </div>
-                <div class="notifications">
-                    <i class="fas fa-bell"></i>
-                </div>
-                <div class="profile">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" alt="Profile">
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <main>
-        <section class="hero">
-            <div class="hero-content">
-                <h1 class="hero-title">Featured Content</h1>
-                <p class="hero-description">Watch the latest and greatest shows and movies.</p>
-                <div class="hero-buttons">
-                    <button class="btn play-btn"><i class="fas fa-play"></i> Play</button>
-                    <button class="btn more-info-btn"><i class="fas fa-info-circle"></i> More Info</button>
-                </div>
-            </div>
-        </section>
-
-        <section class="categories-container">
-            <!-- Categories will be dynamically populated here -->
-        </section>
-    </main>
-
-    <footer>
-        <div class="footer-container">
-            <div class="social-links">
-                <a href="#"><i class="fab fa-facebook-f"></i></a>
-                <a href="#"><i class="fab fa-instagram"></i></a>
-                <a href="#"><i class="fab fa-twitter"></i></a>
-                <a href="#"><i class="fab fa-youtube"></i></a>
-            </div>
-            <div class="footer-links">
-                <div class="footer-links-column">
-                    <a href="#">Audio and Subtitles</a>
-                    <a href="#">Media Center</a>
-                    <a href="#">Privacy</a>
-                    <a href="#">Contact Us</a>
-                </div>
-                <div class="footer-links-column">
-                    <a href="#">Audio Description</a>
-                    <a href="#">Investor Relations</a>
-                    <a href="#">Legal Notices</a>
-                </div>
-                <div class="footer-links-column">
-                    <a href="#">Help Center</a>
-                    <a href="#">Jobs</a>
-                    <a href="#">Cookie Preferences</a>
-                </div>
-                <div class="footer-links-column">
-                    <a href="#">Gift Cards</a>
-                    <a href="#">Terms of Use</a>
-                    <a href="#">Corporate Information</a>
-                </div>
-            </div>
-            <div class="copyright">
-                <p>&copy; 2025 Netflix Clone</p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Modal for content details -->
-    <div id="content-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <div id="modal-details">
-                <!-- Content details will be loaded here -->
+            <div class="search-container">
+                <input type="text" id="search-box" class="search-box" placeholder="Search...">
+                <div id="search-results" class="search-results"></div>
             </div>
         </div>
     </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/papaparse/5.3.0/papaparse.min.js"></script>
-    <script src="app.js"></script>
+    
+    <!-- Content -->
+    <div id="content"></div>
 </body>
 </html>
