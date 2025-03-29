@@ -344,6 +344,11 @@
 
   <div class="video-details">
     <h2 id="video-title"></h2>
+    <div id="season-container" style="display: none;">
+    <label for="season-select">Select Season:</label>
+    <select id="season-select"></select>
+    </div>
+     <ul id="episode-list"></ul>
     <div class="episode-list" id="episode-list"></div>
   </div>
 
@@ -426,44 +431,98 @@
     }
 
     fetch('https://docs.google.com/spreadsheets/d/1xsz1l9reLyakcG1cQBZjytMJ6KZF0zX8Zac4a_YE4C0/export?format=csv')
-      .then(response => response.text())
-      .then(text => {
+    .then(response => response.text())
+    .then(text => {
         const data = parseCSV(text);
         const videoId = new URLSearchParams(window.location.search).get('id');
         const series = data.find(v => v.id === videoId);
-        if (series) {
-          const currentEpisode = series;
-          loadVideo(currentEpisode);
-          const episodes = data.filter(v => v.id === series.id);
-          loadEpisodes(episodes, currentEpisode.episode_id);
 
-          // Load and display trailer
-          const trailerEmbedCode = series.trailer;
-          if (trailerEmbedCode) {
-            trailerIframeContainer.innerHTML = trailerEmbedCode;
-            trailerContainer.style.display = 'block';
-          }
+        if (series) {
+            const currentEpisode = series;
+            loadVideo(currentEpisode);
+
+            // Extract Seasons
+            const seasons = {};
+            data.forEach(row => {
+                const seasonId = row.season_id?.trim();
+                const seasonName = row.season_name?.trim();
+                const episodeId = row.episode_id?.trim();
+                const episodeName = row.episode_name?.trim();
+
+                if (seasonId && seasonName) {
+                    if (!seasons[seasonId]) {
+                        seasons[seasonId] = { name: seasonName, episodes: [] };
+                    }
+                    if (episodeId && episodeName) {
+                        seasons[seasonId].episodes.push({ id: episodeId, name: episodeName });
+                    }
+                }
+            });
+
+            // Add season selection menu if seasons exist
+            const seasonContainer = document.getElementById("season-container");
+            const seasonSelect = document.getElementById("season-select");
+            const episodeList = document.getElementById("episode-list");
+
+            if (Object.keys(seasons).length > 0) {
+                seasonContainer.style.display = "block";
+                seasonSelect.innerHTML = "";
+
+                Object.entries(seasons).forEach(([id, season]) => {
+                    let option = document.createElement("option");
+                    option.value = id;
+                    option.textContent = season.name;
+                    seasonSelect.appendChild(option);
+                });
+
+                function showEpisodes(seasonId) {
+                    episodeList.innerHTML = "";
+                    seasons[seasonId].episodes.forEach(episode => {
+                        let li = document.createElement("li");
+                        li.textContent = episode.name;
+                        episodeList.appendChild(li);
+                    });
+                }
+
+                // Show episodes for the first season by default
+                showEpisodes(Object.keys(seasons)[0]);
+
+                seasonSelect.addEventListener("change", function () {
+                    showEpisodes(this.value);
+                });
+            }
+
+            // Load episodes for the selected season
+            const episodes = data.filter(v => v.season_id === Object.keys(seasons)[0]); 
+            loadEpisodes(episodes, currentEpisode.episode_id);
+
+            // Load and display trailer
+            const trailerEmbedCode = series.trailer;
+            if (trailerEmbedCode) {
+                trailerIframeContainer.innerHTML = trailerEmbedCode;
+                trailerContainer.style.display = 'block';
+            }
         } else {
-          document.getElementById('video-title').innerText = "Video not found";
+            document.getElementById('video-title').innerText = "Video not found";
         }
 
         // Populate categories
         const categories = [...new Set(data.map(row => row.category).filter(Boolean))];
         categories.forEach(category => {
-          const categoryItem = document.createElement('a');
-          categoryItem.textContent = category;
-          categoryItem.href = `category.html?category=${category}`;
-          categoryList.appendChild(categoryItem);
+            const categoryItem = document.createElement('a');
+            categoryItem.textContent = category;
+            categoryItem.href = `category.html?category=${category}`;
+            categoryList.appendChild(categoryItem);
         });
-      })
-      .catch(error => {
+    })
+    .catch(error => {
         console.error('Error loading video data:', error);
         document.getElementById('video-title').innerText = "Error loading video";
-      });
+    });
 
     function handleSearch() {
       const query = searchInput.value.toLowerCase();
-      fetch('https://raw.githubusercontent.com/Sarker5523/My-Playlists/main/tv_series.csv')
+      fetch('https://docs.google.com/spreadsheets/d/1xsz1l9reLyakcG1cQBZjytMJ6KZF0zX8Zac4a_YE4C0/export?format=csv')
         .then(response => response.text())
         .then(text => {
           const data = parseCSV(text);
