@@ -344,12 +344,15 @@
 
   <div class="video-details">
     <h2 id="video-title"></h2>
-    <div class="season-selection">
-  <label for="season-select" class="season-label">Season Select:</label>
-  <select id="season-select">
-    <!-- Seasons will be dynamically added here -->
-  </select>
+    <div class="season-selection" id="season-selection" style="display: none;">
+  <label class="select">
+    <select id="season-select">
+      <!-- Seasons will be added dynamically -->
+    </select>
+  </label>
 </div>
+
+<!-- Episode list (already in your current HTML) -->
 <div class="episode-list" id="episode-list"></div>
   </div>
 
@@ -372,92 +375,7 @@
         document.getElementById('video-title').innerText = "Video not found";
         return;
       }
-      
-const seasonContainer = document.getElementById('season-container');
-const seasonButton = document.getElementById('season-button');
-const seasonDropdown = document.getElementById('season-dropdown');
 
-function loadEpisodes(episodes, currentEpisodeId) {
-  episodeList.innerHTML = '';
-  episodes.forEach(episode => {
-    const button = document.createElement('button');
-    button.innerText = episode.episode_name;
-    button.dataset.episodeId = episode.episode_id;
-    button.onclick = () => {
-      loadVideo(episode);
-    };
-    if (episode.episode_id === currentEpisodeId) {
-      button.classList.add('active');
-    }
-    episodeList.appendChild(button);
-  });
-}
-
-function loadSeasons(seasons, selectedSeasonId, allEpisodes) {
-  seasonDropdown.innerHTML = '';
-  seasonContainer.style.display = seasons.length > 1 ? 'block' : 'none'; // Show only if multiple seasons exist
-
-  seasons.forEach(season => {
-    const button = document.createElement('button');
-    button.innerText = season.season_name;
-    button.onclick = () => {
-      seasonButton.innerText = season.season_name;
-      const filteredEpisodes = allEpisodes.filter(ep => ep.season_id === season.season_id);
-      loadEpisodes(filteredEpisodes, filteredEpisodes.length ? filteredEpisodes[0].episode_id : null);
-      seasonDropdown.style.display = 'none';
-    };
-    seasonDropdown.appendChild(button);
-  });
-
-  seasonButton.innerText = seasons.find(season => season.season_id === selectedSeasonId)?.season_name || 'Select Season';
-}
-
-function parseCSV(text) {
-  const lines = text.split('\n').map(line => line.trim()).filter(line => line);
-  const headers = lines.shift().split(',').map(header => header.trim());
-  const result = [];
-
-  lines.forEach(line => {
-    const currentline = line.split(',').map(value => value.trim());
-    if (currentline.length === headers.length) {
-      const obj = {};
-      headers.forEach((header, index) => {
-        obj[header] = currentline[index];
-      });
-      result.push(obj);
-    }
-  });
-
-  return result;
-}
-
-fetch('https://docs.google.com/spreadsheets/d/1xsz1l9reLyakcG1cQBZjytMJ6KZF0zX8Zac4a_YE4C0/export?format=csv')
-  .then(response => response.text())
-  .then(text => {
-    const data = parseCSV(text);
-    const videoId = new URLSearchParams(window.location.search).get('id');
-    const series = data.find(v => v.id === videoId);
-    if (!series) return;
-
-    const allEpisodes = data.filter(v => v.id === series.id);
-    const availableSeasons = [...new Map(allEpisodes.map(e => [e.season_id, { season_id: e.season_id, season_name: e.season_name }])).values()];
-    const defaultSeasonId = '1';
-    const filteredEpisodes = allEpisodes.filter(ep => ep.season_id === defaultSeasonId);
-
-    loadSeasons(availableSeasons, defaultSeasonId, allEpisodes);
-    loadEpisodes(filteredEpisodes, filteredEpisodes.length ? filteredEpisodes[0].episode_id : null);
-  });
-
-seasonButton.addEventListener('click', () => {
-  seasonDropdown.style.display = seasonDropdown.style.display === 'block' ? 'none' : 'block';
-});
-
-document.addEventListener('click', (event) => {
-  if (!seasonContainer.contains(event.target)) {
-    seasonDropdown.style.display = 'none';
-  }
-});
-      
       document.getElementById('video-title').innerText = `${video.name} - ${video.episode_name}`;
 
       // Dynamically set the webpage title to the episode's title
@@ -611,6 +529,90 @@ document.addEventListener('click', (event) => {
         }
       });
     });
+    const seasonContainer = document.getElementById('season-container');
+const seasonButton = document.getElementById('season-button');
+const seasonDropdown = document.getElementById('season-dropdown');
+
+function loadEpisodes(episodes, currentEpisodeId) {
+  episodeList.innerHTML = '';
+  episodes.forEach(episode => {
+    const button = document.createElement('button');
+    button.innerText = episode.episode_name;
+    button.dataset.episodeId = episode.episode_id;
+    button.onclick = () => {
+      loadVideo(episode);
+    };
+    if (episode.episode_id === currentEpisodeId) {
+      button.classList.add('active');
+    }
+    episodeList.appendChild(button);
+  });
+}
+
+function loadSeasons(seasons, selectedSeasonId, allEpisodes) {
+  seasonDropdown.innerHTML = '';
+  seasonContainer.style.display = seasons.length > 1 ? 'block' : 'none'; // Show only if multiple seasons exist
+
+  seasons.forEach(season => {
+    const button = document.createElement('button');
+    button.innerText = season.season_name;
+    button.onclick = () => {
+      seasonButton.innerText = season.season_name;
+      const filteredEpisodes = allEpisodes.filter(ep => ep.season_id === season.season_id);
+      loadEpisodes(filteredEpisodes, filteredEpisodes.length ? filteredEpisodes[0].episode_id : null);
+      seasonDropdown.style.display = 'none';
+    };
+    seasonDropdown.appendChild(button);
+  });
+
+  seasonButton.innerText = seasons.find(season => season.season_id === selectedSeasonId)?.season_name || 'Select Season';
+}
+
+function parseCSV(text) {
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+  const headers = lines.shift().split(',').map(header => header.trim());
+  const result = [];
+
+  lines.forEach(line => {
+    const currentline = line.split(',').map(value => value.trim());
+    if (currentline.length === headers.length) {
+      const obj = {};
+      headers.forEach((header, index) => {
+        obj[header] = currentline[index];
+      });
+      result.push(obj);
+    }
+  });
+
+  return result;
+}
+
+fetch('https://docs.google.com/spreadsheets/d/1xsz1l9reLyakcG1cQBZjytMJ6KZF0zX8Zac4a_YE4C0/export?format=csv')
+  .then(response => response.text())
+  .then(text => {
+    const data = parseCSV(text);
+    const videoId = new URLSearchParams(window.location.search).get('id');
+    const series = data.find(v => v.id === videoId);
+    if (!series) return;
+
+    const allEpisodes = data.filter(v => v.id === series.id);
+    const availableSeasons = [...new Map(allEpisodes.map(e => [e.season_id, { season_id: e.season_id, season_name: e.season_name }])).values()];
+    const defaultSeasonId = '1';
+    const filteredEpisodes = allEpisodes.filter(ep => ep.season_id === defaultSeasonId);
+
+    loadSeasons(availableSeasons, defaultSeasonId, allEpisodes);
+    loadEpisodes(filteredEpisodes, filteredEpisodes.length ? filteredEpisodes[0].episode_id : null);
+  });
+
+seasonButton.addEventListener('click', () => {
+  seasonDropdown.style.display = seasonDropdown.style.display === 'block' ? 'none' : 'block';
+});
+
+document.addEventListener('click', (event) => {
+  if (!seasonContainer.contains(event.target)) {
+    seasonDropdown.style.display = 'none';
+  }
+});
   </script>
 </body>
 </html>
