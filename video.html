@@ -6,7 +6,6 @@
   <title>Video Details</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    
     .video-container, .trailer-container {
       display: flex;
       justify-content: center;
@@ -367,73 +366,98 @@
     const trailerIframeContainer = document.getElementById('trailer-iframe-container');
     const episodeList = document.getElementById('episode-list');
     const categoryList = document.getElementById('category-list');
-    function loadSeasons(episodes) {
-  const seasonSelect = document.getElementById('season-select');
-  const seasonSet = new Set(episodes.map(episode => episode.season_id));
-  
-  // Only display the season selection if season data exists
-  if (seasonSet.size > 0) {
-    const defaultSeason = '1'; // Default season
-    seasonSelect.innerHTML = `<option value="${defaultSeason}">Season 1</option>`; // Add default option
-    
-    seasonSet.forEach(seasonId => {
-      const seasonName = episodes.find(episode => episode.season_id === seasonId).season_name;
-      const option = document.createElement('option');
-      option.value = seasonId;
-      option.textContent = `Season ${seasonName}`;
-      seasonSelect.appendChild(option);
-    });
-
-    // Load episodes for the default season
-    loadEpisodesForSeason(defaultSeason, episodes);
-
-    // Event listener for season change
-    seasonSelect.addEventListener('change', (e) => {
-      loadEpisodesForSeason(e.target.value, episodes);
-    });
-  }
-}
-
-function loadEpisodesForSeason(seasonId, episodes) {
-  const episodeList = document.getElementById('episode-list');
-  episodeList.innerHTML = ''; // Clear existing episodes
-
-  // Filter episodes by the selected season
-  const selectedSeasonEpisodes = episodes.filter(episode => episode.season_id === seasonId);
-
-  selectedSeasonEpisodes.forEach(episode => {
-    const button = document.createElement('button');
-    button.innerText = episode.episode_name;
-    button.dataset.episodeId = episode.episode_id;
-    button.onclick = () => loadVideo(episode);
-    episodeList.appendChild(button);
-  });
-}
-
-// Example CSV data parsing with season_id and season_name added
-fetch('https://docs.google.com/spreadsheets/d/1xsz1l9reLyakcG1cQBZjytMJ6KZF0zX8Zac4a_YE4C0/export?format=csv')
-  .then(response => response.text())
-  .then(text => {
-    const data = parseCSV(text);
-    const videoId = new URLSearchParams(window.location.search).get('id');
-    const series = data.find(v => v.id === videoId);
-    if (series) {
-      loadSeasons(data); // Load seasons if available
-    } else {
-      document.getElementById('video-title').innerText = "Video not found";
-    }
-  })
-  .catch(error => {
-    console.error('Error loading video data:', error);
-    document.getElementById('video-title').innerText = "Error loading video";
-  });
 
     function loadVideo(video) {
       if (!video) {
         document.getElementById('video-title').innerText = "Video not found";
         return;
       }
+      
+const seasonContainer = document.getElementById('season-container');
+const seasonButton = document.getElementById('season-button');
+const seasonDropdown = document.getElementById('season-dropdown');
 
+function loadEpisodes(episodes, currentEpisodeId) {
+  episodeList.innerHTML = '';
+  episodes.forEach(episode => {
+    const button = document.createElement('button');
+    button.innerText = episode.episode_name;
+    button.dataset.episodeId = episode.episode_id;
+    button.onclick = () => {
+      loadVideo(episode);
+    };
+    if (episode.episode_id === currentEpisodeId) {
+      button.classList.add('active');
+    }
+    episodeList.appendChild(button);
+  });
+}
+
+function loadSeasons(seasons, selectedSeasonId, allEpisodes) {
+  seasonDropdown.innerHTML = '';
+  seasonContainer.style.display = seasons.length > 1 ? 'block' : 'none'; // Show only if multiple seasons exist
+
+  seasons.forEach(season => {
+    const button = document.createElement('button');
+    button.innerText = season.season_name;
+    button.onclick = () => {
+      seasonButton.innerText = season.season_name;
+      const filteredEpisodes = allEpisodes.filter(ep => ep.season_id === season.season_id);
+      loadEpisodes(filteredEpisodes, filteredEpisodes.length ? filteredEpisodes[0].episode_id : null);
+      seasonDropdown.style.display = 'none';
+    };
+    seasonDropdown.appendChild(button);
+  });
+
+  seasonButton.innerText = seasons.find(season => season.season_id === selectedSeasonId)?.season_name || 'Select Season';
+}
+
+function parseCSV(text) {
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+  const headers = lines.shift().split(',').map(header => header.trim());
+  const result = [];
+
+  lines.forEach(line => {
+    const currentline = line.split(',').map(value => value.trim());
+    if (currentline.length === headers.length) {
+      const obj = {};
+      headers.forEach((header, index) => {
+        obj[header] = currentline[index];
+      });
+      result.push(obj);
+    }
+  });
+
+  return result;
+}
+
+fetch('https://docs.google.com/spreadsheets/d/1xsz1l9reLyakcG1cQBZjytMJ6KZF0zX8Zac4a_YE4C0/export?format=csv')
+  .then(response => response.text())
+  .then(text => {
+    const data = parseCSV(text);
+    const videoId = new URLSearchParams(window.location.search).get('id');
+    const series = data.find(v => v.id === videoId);
+    if (!series) return;
+
+    const allEpisodes = data.filter(v => v.id === series.id);
+    const availableSeasons = [...new Map(allEpisodes.map(e => [e.season_id, { season_id: e.season_id, season_name: e.season_name }])).values()];
+    const defaultSeasonId = '1';
+    const filteredEpisodes = allEpisodes.filter(ep => ep.season_id === defaultSeasonId);
+
+    loadSeasons(availableSeasons, defaultSeasonId, allEpisodes);
+    loadEpisodes(filteredEpisodes, filteredEpisodes.length ? filteredEpisodes[0].episode_id : null);
+  });
+
+seasonButton.addEventListener('click', () => {
+  seasonDropdown.style.display = seasonDropdown.style.display === 'block' ? 'none' : 'block';
+});
+
+document.addEventListener('click', (event) => {
+  if (!seasonContainer.contains(event.target)) {
+    seasonDropdown.style.display = 'none';
+  }
+});
+      
       document.getElementById('video-title').innerText = `${video.name} - ${video.episode_name}`;
 
       // Dynamically set the webpage title to the episode's title
