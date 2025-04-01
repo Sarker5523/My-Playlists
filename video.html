@@ -6,6 +6,7 @@
   <title>Video Details</title>
   <link rel="stylesheet" href="styles.css">
   <style>
+    
     .video-container, .trailer-container {
       display: flex;
       justify-content: center;
@@ -314,51 +315,6 @@
         gap: 10px;
         padding: 10px 0;
       }
-      .season-container {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-#season-button {
-  background-color: #444;
-  color: white;
-  padding: 10px 15px;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-  margin-right: 10px;
-}
-
-#season-button:hover {
-  background-color: #00ab41;
-}
-
-.season-dropdown {
-  display: none;
-  position: absolute;
-  background: rgba(0, 0, 0, 0.9);
-  color: white;
-  min-width: 120px;
-  padding: 5px;
-  border-radius: 5px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
-}
-
-.season-dropdown button {
-  display: block;
-  width: 100%;
-  background: none;
-  color: white;
-  border: none;
-  padding: 8px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.season-dropdown button:hover {
-  background: #00ab41;
-}
       .video-item {
         width: 140px;
         flex-shrink: 0;
@@ -389,11 +345,13 @@
 
   <div class="video-details">
     <h2 id="video-title"></h2>
-    <div class="season-container" id="season-container" style="display: none;">
-  <button id="season-button">Select Season</button>
-  <div class="season-dropdown" id="season-dropdown"></div>
-  </div>
-    <div class="episode-list" id="episode-list"></div>
+    <div class="season-selection">
+  <label for="season-select" class="season-label">Season Select:</label>
+  <select id="season-select">
+    <!-- Seasons will be dynamically added here -->
+  </select>
+</div>
+<div class="episode-list" id="episode-list"></div>
   </div>
 
   <!-- New Trailer Section -->
@@ -409,90 +367,66 @@
     const trailerIframeContainer = document.getElementById('trailer-iframe-container');
     const episodeList = document.getElementById('episode-list');
     const categoryList = document.getElementById('category-list');
-    const seasonContainer = document.getElementById('season-container');
-const seasonButton = document.getElementById('season-button');
-const seasonDropdown = document.getElementById('season-dropdown');
+    function loadSeasons(episodes) {
+  const seasonSelect = document.getElementById('season-select');
+  const seasonSet = new Set(episodes.map(episode => episode.season_id));
+  
+  // Only display the season selection if season data exists
+  if (seasonSet.size > 0) {
+    const defaultSeason = '1'; // Default season
+    seasonSelect.innerHTML = `<option value="${defaultSeason}">Season 1</option>`; // Add default option
+    
+    seasonSet.forEach(seasonId => {
+      const seasonName = episodes.find(episode => episode.season_id === seasonId).season_name;
+      const option = document.createElement('option');
+      option.value = seasonId;
+      option.textContent = `Season ${seasonName}`;
+      seasonSelect.appendChild(option);
+    });
 
-function loadEpisodes(episodes, currentEpisodeId) {
-  episodeList.innerHTML = '';
-  episodes.forEach(episode => {
+    // Load episodes for the default season
+    loadEpisodesForSeason(defaultSeason, episodes);
+
+    // Event listener for season change
+    seasonSelect.addEventListener('change', (e) => {
+      loadEpisodesForSeason(e.target.value, episodes);
+    });
+  }
+}
+
+function loadEpisodesForSeason(seasonId, episodes) {
+  const episodeList = document.getElementById('episode-list');
+  episodeList.innerHTML = ''; // Clear existing episodes
+
+  // Filter episodes by the selected season
+  const selectedSeasonEpisodes = episodes.filter(episode => episode.season_id === seasonId);
+
+  selectedSeasonEpisodes.forEach(episode => {
     const button = document.createElement('button');
     button.innerText = episode.episode_name;
     button.dataset.episodeId = episode.episode_id;
-    button.onclick = () => {
-      loadVideo(episode);
-    };
-    if (episode.episode_id === currentEpisodeId) {
-      button.classList.add('active');
-    }
+    button.onclick = () => loadVideo(episode);
     episodeList.appendChild(button);
   });
 }
 
-function loadSeasons(seasons, selectedSeasonId, allEpisodes) {
-  seasonDropdown.innerHTML = '';
-  seasonContainer.style.display = seasons.length > 1 ? 'block' : 'none'; // Show only if multiple seasons exist
-
-  seasons.forEach(season => {
-    const button = document.createElement('button');
-    button.innerText = season.season_name;
-    button.onclick = () => {
-      seasonButton.innerText = season.season_name;
-      const filteredEpisodes = allEpisodes.filter(ep => ep.season_id === season.season_id);
-      loadEpisodes(filteredEpisodes, filteredEpisodes.length ? filteredEpisodes[0].episode_id : null);
-      seasonDropdown.style.display = 'none';
-    };
-    seasonDropdown.appendChild(button);
-  });
-
-  seasonButton.innerText = seasons.find(season => season.season_id === selectedSeasonId)?.season_name || 'Select Season';
-}
-
-function parseCSV(text) {
-  const lines = text.split('\n').map(line => line.trim()).filter(line => line);
-  const headers = lines.shift().split(',').map(header => header.trim());
-  const result = [];
-
-  lines.forEach(line => {
-    const currentline = line.split(',').map(value => value.trim());
-    if (currentline.length === headers.length) {
-      const obj = {};
-      headers.forEach((header, index) => {
-        obj[header] = currentline[index];
-      });
-      result.push(obj);
-    }
-  });
-
-  return result;
-}
-
+// Example CSV data parsing with season_id and season_name added
 fetch('https://docs.google.com/spreadsheets/d/1xsz1l9reLyakcG1cQBZjytMJ6KZF0zX8Zac4a_YE4C0/export?format=csv')
   .then(response => response.text())
   .then(text => {
     const data = parseCSV(text);
     const videoId = new URLSearchParams(window.location.search).get('id');
     const series = data.find(v => v.id === videoId);
-    if (!series) return;
-
-    const allEpisodes = data.filter(v => v.id === series.id);
-    const availableSeasons = [...new Map(allEpisodes.map(e => [e.season_id, { season_id: e.season_id, season_name: e.season_name }])).values()];
-    const defaultSeasonId = '1';
-    const filteredEpisodes = allEpisodes.filter(ep => ep.season_id === defaultSeasonId);
-
-    loadSeasons(availableSeasons, defaultSeasonId, allEpisodes);
-    loadEpisodes(filteredEpisodes, filteredEpisodes.length ? filteredEpisodes[0].episode_id : null);
+    if (series) {
+      loadSeasons(data); // Load seasons if available
+    } else {
+      document.getElementById('video-title').innerText = "Video not found";
+    }
+  })
+  .catch(error => {
+    console.error('Error loading video data:', error);
+    document.getElementById('video-title').innerText = "Error loading video";
   });
-
-seasonButton.addEventListener('click', () => {
-  seasonDropdown.style.display = seasonDropdown.style.display === 'block' ? 'none' : 'block';
-});
-
-document.addEventListener('click', (event) => {
-  if (!seasonContainer.contains(event.target)) {
-    seasonDropdown.style.display = 'none';
-  }
-});
 
     function loadVideo(video) {
       if (!video) {
