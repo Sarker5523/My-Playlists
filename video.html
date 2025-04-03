@@ -18,7 +18,7 @@
       margin-right: auto;
     }
     .season-dropdown {
-  background-color: black;  /* Change background */
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.5));   /* Change background */
   color: white;             /* Change text color */
   border: 1px solid white;  /* Add border */
   padding: 5px;             /* Add padding */
@@ -531,20 +531,11 @@
         }
       });
     });
-    const seasonContainer = document.getElementById('season-container'); // Wraps label & dropdown
-const seasonDropdown = document.getElementById('season-dropdown');
+    const seasonDropdown = document.getElementById('season-dropdown');
 
+// Function to load seasons dynamically
 function loadSeasons(seasons, currentSeasonId) {
   seasonDropdown.innerHTML = ''; // Clear previous options
-
-  if (seasons.length === 0) {
-    seasonContainer.style.display = 'none'; // Hide when no seasons exist
-    return;
-  }
-
-  // Show dropdown only if multiple seasons exist
-  seasonContainer.style.display = seasons.length > 1 ? 'block' : 'none';
-
   seasons.forEach(season => {
     const option = document.createElement('option');
     option.value = season.season_id;
@@ -554,9 +545,11 @@ function loadSeasons(seasons, currentSeasonId) {
     }
     seasonDropdown.appendChild(option);
   });
+
+  seasonDropdown.style.display = seasons.length > 1 ? 'block' : 'none'; // Hide if only one season
 }
 
-// Handle season selection
+// Function to handle season selection
 seasonDropdown.addEventListener('change', function () {
   const selectedSeasonId = this.value;
   const filteredEpisodes = allEpisodes.filter(ep => ep.season_id === selectedSeasonId);
@@ -566,7 +559,7 @@ seasonDropdown.addEventListener('change', function () {
   }
 });
 
-let allEpisodes = []; // Store all episodes
+let allEpisodes = []; // Store all episodes of the series
 
 fetch('https://docs.google.com/spreadsheets/d/1xsz1l9reLyakcG1cQBZjytMJ6KZF0zX8Zac4a_YE4C0/export?format=csv')
   .then(response => response.text())
@@ -577,22 +570,18 @@ fetch('https://docs.google.com/spreadsheets/d/1xsz1l9reLyakcG1cQBZjytMJ6KZF0zX8Z
 
     if (series) {
       allEpisodes = data.filter(v => v.id === series.id);
-      const uniqueSeasons = [...new Map(allEpisodes.map(ep => [ep.season_id, ep])).values()]
-        .filter(season => season.season_id); // Remove empty season_id values
+      const uniqueSeasons = [...new Map(allEpisodes.map(ep => [ep.season_id, ep])).values()];
 
-      if (uniqueSeasons.length > 0) {
-        const defaultSeason = uniqueSeasons[0];
-        loadSeasons(uniqueSeasons, defaultSeason.season_id);
-
-        // Load episodes for the default season
-        const initialEpisodes = allEpisodes.filter(ep => ep.season_id === defaultSeason.season_id);
-        loadVideo(initialEpisodes[0]); // Load first episode
-        loadEpisodes(initialEpisodes, initialEpisodes[0].episode_id);
-      } else {
-        seasonContainer.style.display = 'none'; // Hide if no valid seasons
-      }
-
-      // Load and display trailer if available
+      // Load the first season by default
+      const defaultSeason = uniqueSeasons[0];
+      loadSeasons(uniqueSeasons, defaultSeason.season_id);
+      
+      // Load episodes for the default season
+      const initialEpisodes = allEpisodes.filter(ep => ep.season_id === defaultSeason.season_id);
+      loadVideo(initialEpisodes[0]); // Load first episode
+      loadEpisodes(initialEpisodes, initialEpisodes[0].episode_id);
+      
+      // Load and display trailer
       if (series.trailer) {
         trailerIframeContainer.innerHTML = series.trailer;
         trailerContainer.style.display = 'block';
@@ -605,7 +594,6 @@ fetch('https://docs.google.com/spreadsheets/d/1xsz1l9reLyakcG1cQBZjytMJ6KZF0zX8Z
     console.error('Error loading video data:', error);
     document.getElementById('video-title').innerText = "Error loading video";
   });
-
   </script>
 </body>
 </html>
