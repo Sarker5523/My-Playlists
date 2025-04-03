@@ -352,8 +352,8 @@
   <div class="video-details">
     <h2 id="video-title"></h2>
     <div class="season-selection">
-  <label for="season-dropdown">Select Season:</label>
-  <select id="season-dropdown"></select>
+  <label id="season-label" for="season-dropdown">Select Season:</label>
+  <select id="season-dropdown" class="season-dropdown"></select>
 </div>
     <div class="episode-list" id="episode-list"></div>
   </div>
@@ -594,6 +594,25 @@ fetch('https://docs.google.com/spreadsheets/d/1xsz1l9reLyakcG1cQBZjytMJ6KZF0zX8Z
     console.error('Error loading video data:', error);
     document.getElementById('video-title').innerText = "Error loading video";
   });
+    const seasonLabel = document.getElementById('season-label');
+
+function loadSeasons(seasons, currentSeasonId) {
+  seasonDropdown.innerHTML = ''; // Clear previous options
+  
+  seasons.forEach(season => {
+    const option = document.createElement('option');
+    option.value = season.season_id;
+    option.innerText = season.season_name;
+    if (season.season_id === currentSeasonId) {
+      option.selected = true;
+    }
+    seasonDropdown.appendChild(option);
+  });
+
+  // Hide the label if there's only one or no seasons
+  seasonLabel.style.display = seasons.length > 1 ? 'inline' : 'none';
+  seasonDropdown.style.display = seasons.length > 1 ? 'inline' : 'none';
+}
   </script>
 </body>
 </html>
