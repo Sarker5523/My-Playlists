@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Filegarden Test - First 5 with Number Keys</title>
+    <title>Filegarden Playlist - Number Keys (Loads from M3U8)</title>
     <style>
         body { background:#0f0f0f; color:#fff; font-family:Arial,sans-serif; margin:0; padding:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
         header { background:#141414; padding:15px; text-align:center; font-size:22px; border-bottom:4px solid #e50914; }
@@ -23,19 +23,19 @@
 </head>
 <body>
 
-    <header>Test Playlist - First 5 with Number Keys</header>
+    <header>Filegarden Playlist • Press Numbers to Jump</header>
 
     <div class="main">
         <div class="player-area">
             <video id="video" controls playsinline></video>
             <div class="now-playing" id="nowPlaying"><span style="color:#e50914;">▶</span> <span id="currentTitle"></span></div>
             <div class="input-display" id="inputDisplay">—</div>
-            <div class="status" id="status"></div>
+            <div class="status" id="status">Loading playlist from M3U8...</div>
         </div>
         <div class="playlist-area" id="playlist"></div>
     </div>
 
-    <div class="hint">Press numbers (e.g. 03) to jump • Press 0 first for Fullscreen • Use Play button if needed</div>
+    <div class="hint">Press numbers (e.g. 05) to jump • Press 0 first for Fullscreen • Use Play/Retry if needed</div>
 
     <div class="controls">
         <button onclick="prevVideo()">◀ Previous</button>
@@ -44,14 +44,9 @@
     </div>
 
     <script>
-        let playlist = [
-            { title: "Meet The Sari-Sisters: Indian Twins Share Their First Cock", url: "https://file.garden/acn5HxVugnRof3bM/IRL%20Trailers/Meet%20the%20Sari-Sisters-%20Indian%20Twins%20Share%20Their%20First%20Cock%20-%20Exclusive%20TeamSkeet%20Porn%20Video.mp4" },
-            { title: "Besties And Wives", url: "https://file.garden/acn5HxVugnRof3bM/IRL%20Trailers/Besties%20and%20Wives%20-%20Exclusive%20TeamSkeet%20Porn%20Video.mp4" },
-            { title: "Concept: Demure Wives #2 (Double Vag Penetration!)", url: "https://file.garden/acn5HxVugnRof3bM/IRL%20Trailers/Concept-%20Demure%20Wives%20%232%20(Double%20Vag%20Penetration!)%20-%20Exclusive%20TeamSkeet%20Porn%20Video.mp4" },
-            { title: "You Catfished Your Stepmom?! Fuck Her Ass To Get Rid Of The Tension", url: "https://file.garden/acn5HxVugnRof3bM/IRL%20Trailers/You%20Catfished%20Your%20Stepmom.!%20Fuck%20Her%20Ass%20to%20Get%20Rid%20Of%20the%20Tension%20(Alexis%20James'%20Debut)%20-%20Exclusive%20TeamSkeet%20Porn%20Video.mp4" },
-            { title: "I Finally Fucked My Bully Stepsister In The Ass", url: "https://file.garden/acn5HxVugnRof3bM/IRL%20Trailers/I%20Finally%20Fucked%20My%20Bully%20Stepsister%20in%20The%20Ass%20-%20Exclusive%20TeamSkeet%20Porn%20Video.mp4" }
-        ];
+        const M3U8_URL = "https://raw.githubusercontent.com/Sarker5523/My-Playlists/refs/heads/main/tv_series.m3u8";
 
+        let playlist = [];
         let currentIndex = 0;
         let numberBuffer = '';
 
@@ -61,6 +56,56 @@
         const currentTitleEl = document.getElementById('currentTitle');
         const playlistContainer = document.getElementById('playlist');
         const inputDisplay = document.getElementById('inputDisplay');
+
+        // Load playlist using simple method
+        function loadPlaylist() {
+            statusEl.style.display = 'block';
+            statusEl.textContent = 'Fetching playlist from M3U8...';
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', M3U8_URL, true);
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    parseM3U8(xhr.responseText);
+                } else {
+                    statusEl.textContent = 'Failed to load playlist (status ' + xhr.status + ')';
+                }
+            };
+
+            xhr.onerror = function() {
+                statusEl.textContent = 'Network error. Check connection / DNS.';
+            };
+
+            xhr.send();
+        }
+
+        function parseM3U8(text) {
+            const lines = text.split('\n');
+            playlist = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].startsWith('#EXTINF:')) {
+                    const titlePart = lines[i].split(',').slice(1).join(',').trim();
+                    const url = lines[i + 1] ? lines[i + 1].trim() : '';
+                    if (url && !url.startsWith('#')) {
+                        playlist.push({
+                            title: titlePart || `Video ${playlist.length + 1}`,
+                            url: url
+                        });
+                    }
+                }
+            }
+
+            if (playlist.length === 0) {
+                statusEl.textContent = 'No videos found in playlist.';
+                return;
+            }
+
+            statusEl.style.display = 'none';
+            renderPlaylist();
+            loadVideo(0);
+        }
 
         function renderPlaylist() {
             playlistContainer.innerHTML = '';
@@ -110,13 +155,12 @@
             loadVideo(prev);
         }
 
-        // ====================== NUMBER KEY LOGIC ======================
+        // Number key logic (same as original)
         document.addEventListener('keydown', (e) => {
             const key = e.key;
 
-            if (/^\d$/.test(key)) {   // digit pressed
+            if (/^\d$/.test(key)) {
                 if (key === '0' && numberBuffer === '') {
-                    // First 0 = Fullscreen
                     if (video.requestFullscreen) video.requestFullscreen();
                     else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
                     return;
@@ -141,7 +185,6 @@
 
         function processNumberInput() {
             if (numberBuffer === '') return;
-
             const num = parseInt(numberBuffer);
             numberBuffer = '';
             inputDisplay.style.display = 'none';
@@ -149,8 +192,8 @@
             if (num >= 1 && num <= playlist.length) {
                 loadVideo(num - 1);
             } else {
-                statusEl.textContent = `Invalid number: ${num}`;
-                setTimeout(() => { if (statusEl.textContent.includes('Invalid')) statusEl.style.display = 'none'; }, 2000);
+                statusEl.textContent = `Invalid: ${num}`;
+                setTimeout(() => statusEl.style.display = 'none', 2000);
             }
         }
 
@@ -158,22 +201,17 @@
         video.addEventListener('loadedmetadata', () => {
             statusEl.style.display = 'none';
             setTimeout(playCurrent, 600);
-            nowPlayingEl.style.display = 'flex';
-            setTimeout(() => nowPlayingEl.style.display = 'none', 4000);
         });
 
         video.addEventListener('error', () => {
             statusEl.style.display = 'block';
-            statusEl.textContent = `Failed to load video. Press Play/Retry.`;
+            statusEl.textContent = `Failed to play video. Press Play/Retry.`;
         });
 
         video.addEventListener('ended', nextVideo);
 
         // Start
-        window.onload = () => {
-            renderPlaylist();
-            loadVideo(0);
-        };
+        window.onload = loadPlaylist;
     </script>
 </body>
 </html>
