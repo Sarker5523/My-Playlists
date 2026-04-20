@@ -3,134 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Filegarden Test - First 5 Videos</title>
+    <title>Simple Test - First 5 Videos</title>
     <style>
-        :root { --red: #e50914; }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { background:#0f0f0f; color:#fff; font-family:'Segoe UI',Arial,sans-serif; height:100vh; overflow:hidden; display:flex; flex-direction:column; }
-        header { background:#141414; padding:16px 20px; text-align:center; font-size:23px; font-weight:600; border-bottom:4px solid var(--red); }
+        body { background:#0f0f0f; color:#fff; font-family:Arial,sans-serif; margin:0; padding:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+        header { background:#141414; padding:15px; text-align:center; font-size:22px; border-bottom:4px solid #e50914; }
         .main { display:flex; flex:1; overflow:hidden; }
         .player-area { flex:2; background:#000; position:relative; }
-        #video { width:100%; height:100%; display:block; background:#000; }
-        .now-playing { position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.85); color:white; padding:12px 20px; border-radius:8px; font-size:17px; max-width:65%; z-index:25; display:none; align-items:center; gap:10px; border-left:5px solid var(--red); }
-        .status { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.92); padding:20px 32px; border-radius:10px; font-size:18px; z-index:30; display:none; text-align:center; border:2px solid var(--red); }
-        .playlist-area { flex:1; background:#1a1a1a; overflow-y:auto; padding:12px; }
-        .item { padding:15px 18px; margin:8px 0; background:#222; cursor:pointer; border-radius:8px; display:flex; align-items:center; gap:14px; border-left:4px solid transparent; }
-        .item.active { background:#383838; border-left:4px solid var(--red); }
-        .number { font-size:21px; font-weight:bold; color:var(--red); width:38px; text-align:right; }
-        .title { flex:1; font-size:15.5px; line-height:1.4; }
-        .controls { padding:16px; background:#141414; display:flex; justify-content:center; gap:12px; flex-wrap:wrap; }
-        button { background:var(--red); color:white; border:none; padding:13px 26px; border-radius:6px; font-size:16px; font-weight:600; cursor:pointer; }
-        button:hover { background:#f40612; }
-        .hint { padding:12px; text-align:center; font-size:14.5px; color:#bbb; background:#141414; border-top:1px solid #333; }
+        #video { width:100%; height:100%; background:#000; }
+        .playlist-area { flex:1; background:#1a1a1a; overflow-y:auto; padding:10px; }
+        .item { padding:12px; margin:6px 0; background:#222; cursor:pointer; border-left:4px solid transparent; }
+        .item.active { background:#383838; border-left:4px solid #e50914; }
+        .status { position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.9); padding:10px 15px; border-radius:6px; font-size:16px; border:2px solid #e50914; display:none; }
+        .controls { padding:12px; background:#141414; text-align:center; }
+        button { background:#e50914; color:white; border:none; padding:10px 20px; margin:5px; border-radius:4px; font-size:15px; cursor:pointer; }
+        .hint { padding:10px; text-align:center; font-size:13px; color:#aaa; background:#141414; }
     </style>
 </head>
 <body>
 
-    <header>Test Playlist - First 5 Videos</header>
+    <header>Simple Test Playlist - First 5 Videos</header>
 
     <div class="main">
         <div class="player-area">
-            <video id="video" controls playsinline preload="metadata"></video>
-            <div class="now-playing" id="nowPlaying"><span style="color:var(--red);">▶</span> <span id="currentTitle"></span></div>
-            <div class="status" id="status">Ready - Click a video then press Play/Retry</div>
+            <video id="video" controls playsinline></video>
+            <div class="status" id="status"></div>
         </div>
         <div class="playlist-area" id="playlist"></div>
     </div>
 
-    <div class="hint">Click any video → then press Play/Retry button</div>
+    <div class="hint">Click any title on the right → then press Play/Retry button below</div>
 
     <div class="controls">
-        <button onclick="prevVideo()">◀ Previous</button>
         <button onclick="playCurrent()">▶ Play / Retry</button>
-        <button onclick="nextVideo()">Next ▶</button>
     </div>
 
     <script>
-        let playlist = [
-            { title: "Meet The Sari-Sisters: Indian Twins Share Their First Cock", url: "https://file.garden/acn5HxVugnRof3bM/IRL%20Trailers/Meet%20the%20Sari-Sisters-%20Indian%20Twins%20Share%20Their%20First%20Cock%20-%20Exclusive%20TeamSkeet%20Porn%20Video.mp4" },
-            { title: "Besties And Wives", url: "https://file.garden/acn5HxVugnRof3bM/IRL%20Trailers/Besties%20and%20Wives%20-%20Exclusive%20TeamSkeet%20Porn%20Video.mp4" },
-            { title: "Concept: Demure Wives #2 (Double Vag Penetration!)", url: "https://file.garden/acn5HxVugnRof3bM/IRL%20Trailers/Concept-%20Demure%20Wives%20%232%20(Double%20Vag%20Penetration!)%20-%20Exclusive%20TeamSkeet%20Porn%20Video.mp4" },
-            { title: "You Catfished Your Stepmom?! Fuck Her Ass To Get Rid Of The Tension", url: "https://file.garden/acn5HxVugnRof3bM/IRL%20Trailers/You%20Catfished%20Your%20Stepmom.!%20Fuck%20Her%20Ass%20to%20Get%20Rid%20Of%20the%20Tension%20(Alexis%20James'%20Debut)%20-%20Exclusive%20TeamSkeet%20Porn%20Video.mp4" },
-            { title: "I Finally Fucked My Bully Stepsister In The Ass", url: "https://file.garden/acn5HxVugnRof3bM/IRL%20Trailers/I%20Finally%20Fucked%20My%20Bully%20Stepsister%20in%20The%20Ass%20-%20Exclusive%20TeamSkeet%20Porn%20Video.mp4" }
+        const videos = [
+            { title: "1. Meet The Sari-Sisters", url: "https://file.garden/acn5HxVugnRof3bM/IRL%20Trailers/Meet%20the%20Sari-Sisters-%20Indian%20Twins%20Share%20Their%20First%20Cock%20-%20Exclusive%20TeamSkeet%20Porn%20Video.mp4" },
+            { title: "2. Besties And Wives", url: "https://file.garden/acn5HxVugnRof3bM/IRL%20Trailers/Besties%20and%20Wives%20-%20Exclusive%20TeamSkeet%20Porn%20Video.mp4" },
+            { title: "3. Concept: Demure Wives #2", url: "https://file.garden/acn5HxVugnRof3bM/IRL%20Trailers/Concept-%20Demure%20Wives%20%232%20(Double%20Vag%20Penetration!)%20-%20Exclusive%20TeamSkeet%20Porn%20Video.mp4" },
+            { title: "4. You Catfished Your Stepmom", url: "https://file.garden/acn5HxVugnRof3bM/IRL%20Trailers/You%20Catfished%20Your%20Stepmom.!%20Fuck%20Her%20Ass%20to%20Get%20Rid%20Of%20the%20Tension%20(Alexis%20James'%20Debut)%20-%20Exclusive%20TeamSkeet%20Porn%20Video.mp4" },
+            { title: "5. I Finally Fucked My Bully Stepsister", url: "https://file.garden/acn5HxVugnRof3bM/IRL%20Trailers/I%20Finally%20Fucked%20My%20Bully%20Stepsister%20in%20The%20Ass%20-%20Exclusive%20TeamSkeet%20Porn%20Video.mp4" }
         ];
 
-        let currentIndex = 0;
-
-        const video = document.getElementById('video');
+        const videoEl = document.getElementById('video');
         const statusEl = document.getElementById('status');
-        const nowPlayingEl = document.getElementById('nowPlaying');
-        const currentTitleEl = document.getElementById('currentTitle');
-        const playlistContainer = document.getElementById('playlist');
+        const playlistEl = document.getElementById('playlist');
 
-        function renderPlaylist() {
-            playlistContainer.innerHTML = '';
-            playlist.forEach((item, i) => {
-                const num = (i + 1).toString().padStart(2, '0');
+        // Build playlist with very basic method
+        function buildList() {
+            playlistEl.innerHTML = '';   // clear once
+            videos.forEach((vid, i) => {
                 const div = document.createElement('div');
-                div.className = `item ${i === currentIndex ? 'active' : ''}`;
-                div.innerHTML = `<span class="number">${num}</span><span class="title">${item.title}</span>`;
-                div.onclick = () => loadVideo(i);
-                playlistContainer.appendChild(div);
+                div.className = 'item';
+                div.textContent = (i+1) + '. ' + vid.title;
+                div.onclick = function() {
+                    loadThisVideo(i);
+                };
+                playlistEl.appendChild(div);
             });
         }
 
-        function loadVideo(index) {
-            if (index < 0 || index >= playlist.length) return;
-            currentIndex = index;
-            const item = playlist[index];
-
-            renderPlaylist();
-
-            currentTitleEl.textContent = item.title;
-            nowPlayingEl.style.display = 'flex';
-            setTimeout(() => nowPlayingEl.style.display = 'none', 4000);
-
-            statusEl.textContent = `Loading ${index + 1}: ${item.title}`;
+        function loadThisVideo(i) {
+            const vid = videos[i];
             statusEl.style.display = 'block';
+            statusEl.textContent = 'Loading: ' + vid.title;
 
-            // Simplest possible loading - exactly like opening direct URL
-            video.src = item.url;
-            video.load();
+            videoEl.src = vid.url;
+            videoEl.load();
         }
 
         function playCurrent() {
-            statusEl.textContent = "Trying to play...";
-            video.play().catch(() => {
-                statusEl.innerHTML = `Play failed.<br>Press Play/Retry again`;
+            statusEl.textContent = 'Playing...';
+            videoEl.play().catch(() => {
+                statusEl.textContent = 'Play failed - press Play/Retry again';
             });
         }
 
-        function nextVideo() { let n = currentIndex + 1; if (n >= playlist.length) n = 0; loadVideo(n); }
-        function prevVideo() { let p = currentIndex - 1; if (p < 0) p = playlist.length - 1; loadVideo(p); }
-
-        // Keyboard - very basic
-        document.addEventListener('keydown', (e) => {
-            const key = e.key;
-            if (key === "ArrowRight") nextVideo();
-            if (key === "ArrowLeft") prevVideo();
-            if (key === " ") {
-                e.preventDefault();
-                video.paused ? playCurrent() : video.pause();
-            }
-        });
-
-        video.addEventListener('loadedmetadata', () => {
-            statusEl.style.display = 'none';
-            setTimeout(playCurrent, 600);   // small delay that often helps old Samsung
-        });
-
-        video.addEventListener('error', () => {
-            statusEl.style.display = 'block';
-            statusEl.innerHTML = `Failed.<br>Try pressing Play/Retry`;
-        });
-
-        video.addEventListener('ended', nextVideo);
-
         // Start
-        window.onload = () => {
-            renderPlaylist();
-            loadVideo(0);
+        window.onload = function() {
+            buildList();
+            // Auto load first video
+            setTimeout(() => loadThisVideo(0), 800);
         };
     </script>
 </body>
