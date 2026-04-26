@@ -1,53 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+       
     <meta charset="UTF-8">
+       
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Filegarden Playlist - HLS + MP4 Support</title>
-    <style>
-        body { background:#0f0f0f; color:#fff; font-family:Arial,sans-serif; margin:0; padding:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
-        header { background:#141414; padding:15px; text-align:center; font-size:22px; border-bottom:4px solid #e50914; }
-        .main { display:flex; flex:1; overflow:hidden; }
-        .player-area { flex:2; background:#000; position:relative; }
-        #video { width:100%; height:100%; background:#000; }
-        .now-playing { position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.85); color:white; padding:12px 20px; border-radius:8px; font-size:17px; max-width:65%; z-index:25; display:none; align-items:center; gap:10px; border-left:5px solid #e50914; }
-        .input-display { position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.9); color:#e50914; padding:10px 18px; border-radius:8px; font-size:28px; font-weight:bold; font-family:monospace; min-width:80px; text-align:center; z-index:30; border:2px solid #e50914; display:none; }
-        .status { position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.9); padding:12px 18px; border-radius:6px; font-size:16px; border:2px solid #e50914; display:none; z-index:20; }
-        .playlist-area { flex:1; background:#1a1a1a; overflow-y:auto; padding:10px; scroll-behavior:smooth; }
-        .item { padding:12px; margin:6px 0; background:#222; cursor:pointer; border-left:4px solid transparent; }
-        .item.active { background:#383838; border-left:4px solid #e50914; }
-        .controls { padding:12px; background:#141414; text-align:center; }
-        button { background:#e50914; color:white; border:none; padding:10px 20px; margin:5px; border-radius:4px; font-size:15px; cursor:pointer; }
-        .hint { padding:10px; text-align:center; font-size:13px; color:#aaa; background:#141414; }
+        <title>Filegarden Playlist - HLS + MP4 Support</title>
+        <style>
+        body {
+            background: #0f0f0f;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: #141414;
+            padding: 15px;
+            text-align: center;
+            font-size: 22px;
+            border-bottom: 4px solid #e50914;
+        }
+
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .player-area {
+            flex: 2;
+            background: #000;
+            position: relative;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        .now-playing {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 17px;
+            max-width: 65%;
+            z-index: 25;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            border-left: 5px solid #e50914;
+        }
+
+        .input-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: #e50914;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 28px;
+            font-weight: bold;
+            font-family: monospace;
+            min-width: 80px;
+            text-align: center;
+            z-index: 30;
+            border: 2px solid #e50914;
+            display: none;
+        }
+
+        .status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 12px 18px;
+            border-radius: 6px;
+            font-size: 16px;
+            border: 2px solid #e50914;
+            display: none;
+            z-index: 20;
+        }
+
+        .playlist-area {
+            flex: 1;
+            background: #1a1a1a;
+            overflow-y: auto;
+            padding: 10px;
+            scroll-behavior: smooth;
+        }
+
+        .item {
+            padding: 12px;
+            margin: 6px 0;
+            background: #222;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+        }
+
+        .item.active {
+            background: #383838;
+            border-left: 4px solid #e50914;
+        }
+
+        .controls {
+            padding: 12px;
+            background: #141414;
+            text-align: center;
+        }
+
+        button {
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .hint {
+            padding: 10px;
+            text-align: center;
+            font-size: 13px;
+            color: #aaa;
+            background: #141414;
+        }
     </style>
-    <!-- HLS.js (lightweight fallback) - only loads when needed -->
+        <!-- HLS.js (lightweight fallback) - only loads when needed -->
+       
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
-<body>
-    <header>Filegarden Playlist • Numbers + HLS Support</header>
-    <div class="main">
-        <div class="player-area">
-            <video id="video" controls playsinline></video>
-            <div class="now-playing" id="nowPlaying"><span style="color:#e50914;">▶</span> <span id="currentTitle"></span></div>
-            <div class="input-display" id="inputDisplay">—</div>
-            <div class="status" id="status">Loading playlist...</div>
-        </div>
-        <div class="playlist-area" id="playlist"></div>
-    </div>
-    <div class="hint">Press numbers (e.g. 05 or 12) • Press 0 for Fullscreen • Old Tizen may struggle with real HLS streams</div>
-    <div class="controls">
-        <button onclick="prevVideo()">◀ Previous</button>
-        <button onclick="playCurrent()">▶ Play / Retry</button>
-        <button onclick="nextVideo()">Next ▶</button>
-    </div>
 
+<body>
+        <header>Filegarden Playlist • Numbers + HLS Support</header>
+        <div class="main">
+                <div class="player-area">
+                        <video id="video" controls playsinline></video>
+                        <div class="now-playing" id="nowPlaying"><span style="color:#e50914;">▶</span> <span
+                    id="currentTitle"></span></div>
+                        <div class="input-display" id="inputDisplay">—</div>
+                        <div class="status" id="status">Loading playlist...</div>
+                    </div>
+                <div class="playlist-area" id="playlist"></div>
+            </div>
+        <div class="hint">Press numbers (e.g. 05 or 12) • Press 0 for Fullscreen • Old Tizen may struggle with real HLS
+        streams</div>
+        <div class="controls">
+               <button onclick="toggleSource()" style="background:#444;">🔄 Switch Source</button>
+                <button onclick="prevVideo()">◀ Previous</button>
+                <button onclick="playCurrent()">▶ Play / Retry</button>
+                <button onclick="nextVideo()">Next ▶</button>
+            </div>
+
+       
     <script>
-        const M3U8_URL = "https://raw.githubusercontent.com/Sarker5523/My-Playlists/refs/heads/main/tv_series.m3u8";
-        
+        // Replace the old M3U8_URL line with these:
+        const SOURCE_1 = "https://raw.githubusercontent.com/Sarker5523/My-Playlists/refs/heads/main/IRL%20Videos.m3u8";
+        const SOURCE_2 = "https://raw.githubusercontent.com/Sarker5523/My-Playlists/refs/heads/main/tv_series.m3u8";
+        let currentSource = SOURCE_1; // Set IRL Videos as default
+
         let playlist = [];
         let currentIndex = 0;
         let numberBuffer = '';
-        let hls = null;                     // for HLS.js fallback
+        let hls = null;                     // for HLS.js fallback
 
         const video = document.getElementById('video');
         const statusEl = document.getElementById('status');
@@ -60,8 +189,9 @@
         function loadPlaylist() {
             statusEl.style.display = 'block';
             statusEl.textContent = 'Fetching playlist...';
-            
-            fetch(M3U8_URL)
+
+            // Change M3U8_URL to currentSource here
+            fetch(currentSource)
                 .then(res => res.text())
                 .then(text => {
                     parseM3U8(text);
@@ -70,7 +200,19 @@
                     statusEl.textContent = 'Failed to load playlist. Check internet.';
                 });
         }
+        function toggleSource() {
+            // Switch between the two URLs
+            currentSource = (currentSource === SOURCE_1) ? SOURCE_2 : SOURCE_1;
 
+            // Reset indices and reload
+            currentIndex = 0;
+            loadPlaylist();
+
+            // Optional: visual feedback
+            const sourceName = (currentSource === SOURCE_1) ? "IRL Videos" : "TV Series";
+            statusEl.textContent = `Switching to: ${sourceName}`;
+            statusEl.style.display = 'block';
+        }
         function parseM3U8(text) {
             const lines = text.split('\n');
             playlist = [];
@@ -160,7 +302,7 @@
                 hls.attachMedia(video);
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
                     statusEl.style.display = 'none';
-                    video.play().catch(() => {});
+                    video.play().catch(() => { });
                 });
                 hls.on(Hls.Events.ERROR, (event, data) => {
                     if (data.fatal) {
@@ -248,4 +390,5 @@
         window.onload = loadPlaylist;
     </script>
 </body>
+
 </html>
