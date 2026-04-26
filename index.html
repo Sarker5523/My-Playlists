@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HLS Player - Drive M3U8 Support</title>
+    <title>Multi-Player • Drive M3U8 Support</title>
     <style>
         body { background:#0f0f0f; color:#fff; font-family:Arial,sans-serif; margin:0; padding:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
         header { background:#141414; padding:15px; text-align:center; font-size:22px; border-bottom:4px solid #e50914; }
@@ -12,29 +12,37 @@
         #video { width:100%; height:100%; background:#000; }
         .now-playing { position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.85); color:white; padding:12px 20px; border-radius:8px; font-size:17px; max-width:65%; z-index:25; display:none; align-items:center; gap:10px; border-left:5px solid #e50914; }
         .input-display { position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.9); color:#e50914; padding:10px 18px; border-radius:8px; font-size:28px; font-weight:bold; font-family:monospace; min-width:80px; text-align:center; z-index:30; border:2px solid #e50914; display:none; }
-        .status { position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.9); padding:12px 18px; border-radius:6px; font-size:16px; border:2px solid #e50914; display:none; z-index:20; max-width:70%; }
+        .status { position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.9); padding:12px 18px; border-radius:6px; font-size:16px; border:2px solid #e50914; z-index:20; max-width:70%; }
         .playlist-area { flex:1; background:#1a1a1a; overflow-y:auto; padding:10px; scroll-behavior:smooth; }
         .item { padding:12px; margin:6px 0; background:#222; cursor:pointer; border-left:4px solid transparent; }
         .item.active { background:#383838; border-left:4px solid #e50914; }
         .controls { padding:12px; background:#141414; text-align:center; }
         button { background:#e50914; color:white; border:none; padding:10px 20px; margin:5px; border-radius:4px; font-size:15px; cursor:pointer; }
         .hint { padding:10px; text-align:center; font-size:13px; color:#aaa; background:#141414; }
+        .player-info { position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.7); padding:5px 10px; border-radius:4px; font-size:12px; }
     </style>
-    <!-- HLS.js - Required for real m3u8 streams -->
+
+    <!-- hls.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
+    <!-- Video.js -->
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet">
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <!-- Shaka Player -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.0/shaka-player.compiled.min.js"></script>
 </head>
 <body>
-    <header>HLS Player • Drive M3U8 + Number Keys</header>
+    <header>Multi-Player • Google Drive HLS (hls.js → Video.js → Shaka → Native)</header>
     <div class="main">
         <div class="player-area">
-            <video id="video" controls playsinline></video>
+            <video id="video" class="video-js vjs-default-skin" controls playsinline></video>
             <div class="now-playing" id="nowPlaying"><span style="color:#e50914;">▶</span> <span id="currentTitle"></span></div>
             <div class="input-display" id="inputDisplay">—</div>
             <div class="status" id="status">Loading playlist...</div>
+            <div class="player-info" id="playerInfo">Using: hls.js</div>
         </div>
         <div class="playlist-area" id="playlist"></div>
     </div>
-    <div class="hint">Press numbers (01-99) on remote • 0 = Fullscreen • HLS.js used for .m3u8</div>
+    <div class="hint">Press numbers (01-99) • 0 = Fullscreen • Multiple players for better Google Drive tolerance</div>
     <div class="controls">
         <button onclick="prevVideo()">◀ Previous</button>
         <button onclick="playCurrent()">▶ Play / Retry</button>
@@ -42,12 +50,12 @@
     </div>
 
     <script>
-        const PLAYLIST_URL = "https://raw.githubusercontent.com/Sarker5523/My-Playlists/refs/heads/main/tv_series.m3u8";
-        
+        const PLAYLIST_URL = "https://drive.google.com/uc?export=download&id=1tvAXBzp-IaPW6sMK125tUMDnEELPs61n";
+       
         let playlist = [];
         let currentIndex = 0;
         let numberBuffer = '';
-        let hlsInstance = null;
+        let currentPlayerType = 'hls'; // hls, videojs, shaka, native
 
         const video = document.getElementById('video');
         const statusEl = document.getElementById('status');
@@ -55,19 +63,22 @@
         const currentTitleEl = document.getElementById('currentTitle');
         const inputDisplay = document.getElementById('inputDisplay');
         const playlistContainer = document.getElementById('playlist');
+        const playerInfo = document.getElementById('playerInfo');
 
-        // Load playlist
+        let hlsInstance = null;
+        let videojsPlayer = null;
+        let shakaInstance = null;
+
         async function loadPlaylist() {
             statusEl.style.display = 'block';
-            statusEl.textContent = 'Fetching HLS playlist from Google Drive...';
-            
+            statusEl.textContent = 'Fetching playlist from Google Drive...';
             try {
                 const res = await fetch(PLAYLIST_URL);
-                if (!res.ok) throw new Error('Network error');
+                if (!res.ok) throw new Error('Failed to fetch');
                 const text = await res.text();
                 parseM3U8(text);
             } catch (err) {
-                statusEl.textContent = 'Failed to load playlist. Check internet or link.';
+                statusEl.textContent = 'Failed to load playlist. Check the link.';
             }
         }
 
@@ -76,7 +87,7 @@
             playlist = [];
             for (let i = 0; i < lines.length; i++) {
                 if (lines[i].startsWith('#EXTINF:')) {
-                    const title = lines[i].split(',').slice(1).join(',').trim() || `Segment ${playlist.length + 1}`;
+                    const title = lines[i].split(',').slice(1).join(',').trim() || `Item ${playlist.length + 1}`;
                     const url = lines[i + 1] ? lines[i + 1].trim() : '';
                     if (url && !url.startsWith('#')) {
                         playlist.push({ title, url });
@@ -84,7 +95,7 @@
                 }
             }
             if (playlist.length === 0) {
-                statusEl.textContent = 'No videos found in playlist.';
+                statusEl.textContent = 'No videos found.';
                 return;
             }
             statusEl.style.display = 'none';
@@ -108,7 +119,7 @@
             if (active) active.scrollIntoView({ behavior: "smooth", block: "center" });
         }
 
-        // Load video with HLS.js priority for m3u8
+        // Main load function - tries multiple players
         function loadVideo(index) {
             if (index < 0 || index >= playlist.length) return;
             currentIndex = index;
@@ -116,7 +127,6 @@
 
             renderPlaylist();
             scrollToActive();
-
             currentTitleEl.textContent = item.title;
             nowPlayingEl.style.display = 'flex';
             setTimeout(() => nowPlayingEl.style.display = 'none', 5000);
@@ -124,21 +134,29 @@
             statusEl.style.display = 'block';
             statusEl.textContent = `Loading ${index + 1}: ${item.title}`;
 
-            // Cleanup previous HLS
-            if (hlsInstance) {
-                hlsInstance.destroy();
-                hlsInstance = null;
-            }
+            cleanupPlayers();
 
-            // Always use HLS.js for this playlist (since it's real HLS content)
+            // Try order: hls.js → Video.js → Shaka → Native
+            tryHlsFirst(item.url);
+        }
+
+        function cleanupPlayers() {
+            if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+            if (videojsPlayer) { videojsPlayer.dispose(); videojsPlayer = null; }
+            if (shakaInstance) { shakaInstance.destroy(); shakaInstance = null; }
+            video.src = '';
+        }
+
+        function tryHlsFirst(url) {
+            currentPlayerType = 'hls';
+            playerInfo.textContent = 'Using: hls.js';
             if (Hls.isSupported()) {
                 hlsInstance = new Hls({
-                    debug: false,
                     maxBufferLength: 30,
-                    maxMaxBufferLength: 60
+                    maxMaxBufferLength: 60,
+                    lowLatencyMode: false
                 });
-
-                hlsInstance.loadSource(item.url);
+                hlsInstance.loadSource(url);
                 hlsInstance.attachMedia(video);
 
                 hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -148,23 +166,59 @@
 
                 hlsInstance.on(Hls.Events.ERROR, (event, data) => {
                     if (data.fatal) {
-                        statusEl.style.display = 'block';
-                        statusEl.textContent = 'HLS playback error. Try Play/Retry or another item.';
+                        console.log("hls.js failed, trying Video.js...");
+                        setTimeout(() => tryVideoJS(url), 800);
                     }
                 });
             } else {
-                // Fallback if HLS.js not supported (rare)
-                video.src = item.url;
-                video.load();
+                tryVideoJS(url);
             }
         }
 
-        function playCurrent() {
-            if (video.paused) {
-                video.play().catch(() => {
-                    statusEl.textContent = "Playback failed — press again";
-                });
+        function tryVideoJS(url) {
+            currentPlayerType = 'videojs';
+            playerInfo.textContent = 'Using: Video.js';
+            videojsPlayer = videojs(video, {
+                html5: { hls: { overrideNative: true } }
+            });
+            videojsPlayer.src({ type: 'application/x-mpegURL', src: url });
+            videojsPlayer.ready(() => {
+                statusEl.style.display = 'none';
+                videojsPlayer.play().catch(() => {});
+            });
+            videojsPlayer.on('error', () => {
+                console.log("Video.js failed, trying Shaka...");
+                setTimeout(() => tryShaka(url), 800);
+            });
+        }
+
+        async function tryShaka(url) {
+            currentPlayerType = 'shaka';
+            playerInfo.textContent = 'Using: Shaka Player';
+            shakaInstance = new shaka.Player(video);
+            try {
+                await shakaInstance.load(url);
+                statusEl.style.display = 'none';
+                video.play().catch(() => {});
+            } catch (e) {
+                console.log("Shaka failed, using native fallback");
+                useNativeFallback(url);
             }
+        }
+
+        function useNativeFallback(url) {
+            currentPlayerType = 'native';
+            playerInfo.textContent = 'Using: Native HTML5';
+            video.src = url;
+            video.load();
+            video.play().catch(() => {});
+            statusEl.style.display = 'none';
+        }
+
+        function playCurrent() {
+            video.play().catch(() => {
+                statusEl.textContent = "Playback failed — trying again...";
+            });
         }
 
         function nextVideo() {
@@ -179,24 +233,21 @@
             loadVideo(prev);
         }
 
-        // Number key support (01 to 99)
+        // Number key support
         document.addEventListener('keydown', (e) => {
             const key = e.key;
             if (/^\d$/.test(key)) {
                 if (key === '0' && numberBuffer === '') {
                     if (video.requestFullscreen) video.requestFullscreen();
-                    else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
                     return;
                 }
                 numberBuffer += key;
                 inputDisplay.textContent = numberBuffer.padStart(2, '0');
                 inputDisplay.style.display = 'block';
-
                 clearTimeout(window.numberTimeout);
                 window.numberTimeout = setTimeout(processNumberInput, 1200);
                 return;
             }
-
             if (key === "ArrowRight") nextVideo();
             if (key === "ArrowLeft") prevVideo();
             if (key === " ") {
@@ -210,28 +261,13 @@
             const num = parseInt(numberBuffer);
             numberBuffer = '';
             inputDisplay.style.display = 'none';
-
             if (num >= 1 && num <= playlist.length) {
                 loadVideo(num - 1);
-            } else {
-                statusEl.textContent = `Invalid: ${num} (max ${playlist.length})`;
-                setTimeout(() => { if (statusEl.textContent.includes('Invalid')) statusEl.style.display = 'none'; }, 2500);
             }
         }
 
-        // Video events
-        video.addEventListener('loadedmetadata', () => {
-            statusEl.style.display = 'none';
-        });
-
-        video.addEventListener('error', () => {
-            statusEl.style.display = 'block';
-            statusEl.textContent = 'Video error. Try Play/Retry button.';
-        });
-
         video.addEventListener('ended', nextVideo);
 
-        // Start
         window.onload = loadPlaylist;
     </script>
 </body>
