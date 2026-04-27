@@ -2,18 +2,12 @@
 <html lang="en">
 
 <head>
+       
     <meta charset="UTF-8">
+       
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Filegarden Playlist - Video.js Total Skin</title>
-
-    <!-- Video.js Core -->
-    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet">
-
-    <!-- Video.js Total / Tube Skin (Dark Modern Style) -->
-    <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/gh/0xPrateek/videojs-tube-skin@master/dist/videojs-tube-skin.min.css">
-
-    <style>
+        <title>Filegarden Playlist - HLS + MP4 Support</title>
+        <style>
         body {
             background: #0f0f0f;
             color: #fff;
@@ -46,9 +40,10 @@
             position: relative;
         }
 
-        .video-js {
-            width: 100% !important;
-            height: 100% !important;
+        #video {
+            width: 100%;
+            height: 100%;
+            background: #000;
         }
 
         .now-playing {
@@ -145,100 +140,79 @@
             background: #141414;
         }
     </style>
-
-    <!-- Video.js JS -->
-    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-    <!-- HLS.js fallback -->
+        <!-- HLS.js (lightweight fallback) - only loads when needed -->
+       
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
 
 <body>
-    <header>Filegarden Playlist • Video.js Total Skin</header>
+        <header>Filegarden Playlist • Numbers + HLS Support</header>
+        <div class="main">
+                <div class="player-area">
+                        <video id="video" controls playsinline></video>
+                        <div class="now-playing" id="nowPlaying"><span style="color:#e50914;">▶</span> <span
+                    id="currentTitle"></span></div>
+                        <div class="input-display" id="inputDisplay">—</div>
+                        <div class="status" id="status">Loading playlist...</div>
+                    </div>
+                <div class="playlist-area" id="playlist"></div>
+            </div>
+        <div class="hint">Press numbers (e.g. 05 or 12) • Press 0 for Fullscreen • Old Tizen may struggle with real HLS
+        streams</div>
+        <div class="controls">
+               <button onclick="toggleSource()" style="background:#444;">🔄 Switch Source</button>
+                <button onclick="prevVideo()">◀ Previous</button>
+                <button onclick="playCurrent()">▶ Play / Retry</button>
+                <button onclick="nextVideo()">Next ▶</button>
+            </div>
 
-    <div class="main">
-        <div class="player-area">
-            <video id="video" class="video-js vjs-tube-skin" controls playsinline preload="auto"></video>
-
-            <div class="now-playing" id="nowPlaying">
-                <span style="color:#e50914;">▶</span>
-                <span id="currentTitle"></span>
-            </div>
-
-            <div class="input-display" id="inputDisplay">—</div>
-            <div class="status" id="status">Loading playlist...</div>
-        </div>
-
-        <div class="playlist-area" id="playlist"></div>
-    </div>
-
-    <div class="hint">
-        Press numbers (e.g. 05 or 12) • Press 0 for Fullscreen • Arrow keys for navigation
-    </div>
-
-    <div class="controls">
-        <button onclick="toggleSource()" style="background:#444;">🔄 Switch Source</button>
-        <button onclick="prevVideo()">◀ Previous</button>
-        <button onclick="playCurrent()">▶ Play / Retry</button>
-        <button onclick="nextVideo()">Next ▶</button>
-    </div>
-
+       
     <script>
-        // Sources
+        // Replace the old M3U8_URL line with these:
         const SOURCE_1 = "https://raw.githubusercontent.com/Sarker5523/My-Playlists/refs/heads/main/IRL%20Videos.m3u8";
         const SOURCE_2 = "https://raw.githubusercontent.com/Sarker5523/My-Playlists/refs/heads/main/tv_series.m3u8";
+        let currentSource = SOURCE_1; // Set IRL Videos as default
 
-        let currentSource = SOURCE_1;
         let playlist = [];
         let currentIndex = 0;
         let numberBuffer = '';
-        let player = null;
-        let hls = null;
+        let hls = null;                     // for HLS.js fallback
 
+        const video = document.getElementById('video');
         const statusEl = document.getElementById('status');
         const nowPlayingEl = document.getElementById('nowPlaying');
         const currentTitleEl = document.getElementById('currentTitle');
         const inputDisplay = document.getElementById('inputDisplay');
         const playlistContainer = document.getElementById('playlist');
 
-        function initVideoPlayer() {
-            player = videojs('video', {
-                fluid: true,
-                responsive: true,
-                controls: true,
-                autoplay: false,
-                preload: 'auto',
-                playbackRates: [0.5, 1, 1.25, 1.5, 2],
-                html5: {
-                    hls: { overrideNative: true }
-                }
-            });
-
-            player.on('ended', nextVideo);
-        }
-
+        // Load and parse playlist
         function loadPlaylist() {
             statusEl.style.display = 'block';
             statusEl.textContent = 'Fetching playlist...';
 
+            // Change M3U8_URL to currentSource here
             fetch(currentSource)
                 .then(res => res.text())
-                .then(text => parseM3U8(text))
+                .then(text => {
+                    parseM3U8(text);
+                })
                 .catch(() => {
                     statusEl.textContent = 'Failed to load playlist. Check internet.';
                 });
         }
-
         function toggleSource() {
+            // Switch between the two URLs
             currentSource = (currentSource === SOURCE_1) ? SOURCE_2 : SOURCE_1;
+
+            // Reset indices and reload
             currentIndex = 0;
             loadPlaylist();
 
+            // Optional: visual feedback
             const sourceName = (currentSource === SOURCE_1) ? "IRL Videos" : "TV Series";
-            statusEl.textContent = `Switched to: ${sourceName}`;
+            statusEl.textContent = `Switching to: ${sourceName}`;
             statusEl.style.display = 'block';
-            setTimeout(() => statusEl.style.display = 'none', 2000);
         }
-
         function parseM3U8(text) {
             const lines = text.split('\n');
             playlist = [];
@@ -251,12 +225,10 @@
                     }
                 }
             }
-
             if (playlist.length === 0) {
                 statusEl.textContent = 'No videos found.';
                 return;
             }
-
             statusEl.style.display = 'none';
             renderPlaylist();
             loadVideo(0);
@@ -267,7 +239,7 @@
             playlist.forEach((item, i) => {
                 const div = document.createElement('div');
                 div.className = `item ${i === currentIndex ? 'active' : ''}`;
-                div.textContent = `${i + 1}. ${item.title}`;
+                div.textContent = (i + 1) + '. ' + item.title;
                 div.onclick = () => loadVideo(i);
                 playlistContainer.appendChild(div);
             });
@@ -278,9 +250,9 @@
             if (active) active.scrollIntoView({ behavior: "smooth", block: "center" });
         }
 
+        // Main function to load any video (MP4 or m3u8)
         function loadVideo(index) {
             if (index < 0 || index >= playlist.length) return;
-
             currentIndex = index;
             const item = playlist[index];
 
@@ -294,6 +266,7 @@
             statusEl.style.display = 'block';
             statusEl.textContent = `Loading ${index + 1}: ${item.title}`;
 
+            // Clean up previous HLS instance
             if (hls) {
                 hls.destroy();
                 hls = null;
@@ -301,19 +274,50 @@
 
             const isHLS = item.url.toLowerCase().endsWith('.m3u8');
 
-            player.src({
-                src: item.url,
-                type: isHLS ? 'application/x-mpegURL' : 'video/mp4'
-            });
+            if (isHLS) {
+                // Try native HLS first (some Tizen versions support it)
+                video.src = item.url;
+                video.load();
 
-            player.load();
-            player.ready(() => {
-                player.play().catch(() => { });
-            });
+                // If native fails after a short time, try HLS.js
+                setTimeout(() => {
+                    if (video.error && Hls.isSupported()) {
+                        tryHlsJs(item.url);
+                    }
+                }, 1500);
+            } else {
+                // Direct MP4 (most of your current links)
+                video.src = item.url;
+                video.load();
+            }
+        }
+
+        function tryHlsJs(url) {
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    debug: false,
+                    enableWorker: true
+                });
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    statusEl.style.display = 'none';
+                    video.play().catch(() => { });
+                });
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    if (data.fatal) {
+                        statusEl.textContent = "HLS playback failed. Old Tizen may not support real m3u8 streams well.";
+                    }
+                });
+            } else {
+                statusEl.textContent = "HLS not supported on this browser. Trying as normal video...";
+            }
         }
 
         function playCurrent() {
-            if (player) player.play().catch(() => { });
+            video.play().catch(() => {
+                statusEl.textContent = "Playback failed — press Play/Retry again";
+            });
         }
 
         function nextVideo() {
@@ -328,18 +332,20 @@
             loadVideo(prev);
         }
 
-        // Keyboard controls
+        // Number key support (single + double digit)
         document.addEventListener('keydown', (e) => {
             const key = e.key;
-
             if (/^\d$/.test(key)) {
                 if (key === '0' && numberBuffer === '') {
-                    if (player) player.requestFullscreen();
+                    // Fullscreen
+                    if (video.requestFullscreen) video.requestFullscreen();
+                    else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
                     return;
                 }
                 numberBuffer += key;
                 inputDisplay.textContent = numberBuffer;
                 inputDisplay.style.display = 'block';
+
                 clearTimeout(window.numberTimeout);
                 window.numberTimeout = setTimeout(processNumberInput, 1200);
                 return;
@@ -349,7 +355,7 @@
             if (key === "ArrowLeft") prevVideo();
             if (key === " ") {
                 e.preventDefault();
-                if (player) player.paused() ? playCurrent() : player.pause();
+                video.paused ? playCurrent() : video.pause();
             }
         });
 
@@ -367,11 +373,21 @@
             }
         }
 
+        // Video events
+        video.addEventListener('loadedmetadata', () => {
+            statusEl.style.display = 'none';
+            setTimeout(playCurrent, 800);
+        });
+
+        video.addEventListener('error', () => {
+            statusEl.style.display = 'block';
+            statusEl.textContent = `Failed to play. Try Play/Retry or another video.`;
+        });
+
+        video.addEventListener('ended', nextVideo);
+
         // Start
-        window.onload = () => {
-            initVideoPlayer();
-            loadPlaylist();
-        };
+        window.onload = loadPlaylist;
     </script>
 </body>
 
