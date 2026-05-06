@@ -1,0 +1,6 @@
+#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-PLAYLIST-TYPE:VOD
+
+#EXTINF:-1,SAME-215
+https://file.garden/afmWBvYw1j19jsPN/SAME-215/playlist.m3u8
