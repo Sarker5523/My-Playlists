@@ -2,9 +2,9 @@
 #EXT-X-VERSION:3
 #EXT-X-PLAYLIST-TYPE:VOD
 
-#EXTINF:-1,SAME-215
+#EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/digital/video/same00215/same00215pl.jpg",SAME-215
 https://file.garden/afmWBvYw1j19jsPN/SAME-215/playlist.m3u8
-#EXTINF:-1,SDDE-763
+#EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/digital/video/1sdde00763/1sdde00763pl.jpg",SDDE-763
 https://file.garden/aftGCD23iVucvchs/SDDE-763/playlist.m3u8
-#EXTINF:-1,START-509
+#EXTINF:-1 tvg-logo="https://pics.dmm.co.jp/digital/video/1start00509/1start00509pl.jpg",START-509
 https://file.garden/aftGCD23iVucvchs/START-509/playlist.m3u8
