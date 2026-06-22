@@ -12,23 +12,85 @@
         
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px 16px; }
-        .card { background: #141414; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; transition: all 0.22s; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
-        .card:hover { transform: scale(1.04) translateY(-4px); box-shadow: 0 8px 32px rgba(229,9,20,0.28), 0 2px 8px rgba(0,0,0,0.5); }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
+            gap: 20px 16px; 
+        }
         
-        .poster-container { position: relative; padding-top: 56.25%; background: #0f0f0f; overflow: hidden; } /* Landscape ratio */
-        .poster-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-        .fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; background: linear-gradient(135deg, #1a0a0a, #1a1a2a); }
+        @media (max-width: 480px) {
+            .grid { 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 16px 12px; 
+            }
+        }
         
-        .copy-btn { margin-top: 4px; padding: 7px 0; background: #222; color: #fff; border: none; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer; transition: background 0.18s; }
+        .card { 
+            background: #141414; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            transition: all 0.22s; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
+        }
+        .card:hover { 
+            transform: scale(1.04) translateY(-4px); 
+            box-shadow: 0 8px 32px rgba(229,9,20,0.28), 0 2px 8px rgba(0,0,0,0.5); 
+        }
+        
+        .poster-container { 
+            position: relative; 
+            padding-top: 56.25%; /* 16:9 landscape */
+            background: #0f0f0f; 
+            overflow: hidden; 
+        }
+        .poster-img { 
+            position: absolute; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            object-fit: cover; 
+        }
+        .fallback { 
+            position: absolute; 
+            inset: 0; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            flex-direction: column; 
+            background: linear-gradient(135deg, #1a0a0a, #1a1a2a); 
+        }
+        
+        .copy-btn { 
+            margin-top: 4px; 
+            padding: 7px 0; 
+            background: #222; 
+            color: #fff; 
+            border: none; 
+            border-radius: 5px; 
+            font-size: 11px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: background 0.18s; 
+        }
         .copy-btn:hover { background: #E50914; }
         .copy-btn.success { background: #1a6b1a; }
         
         .pagination {
-            display: flex; justify-content: center; gap: 12px; margin: 40px 0; flex-wrap: wrap;
+            display: flex; 
+            justify-content: center; 
+            gap: 12px; 
+            margin: 40px 0; 
+            flex-wrap: wrap;
         }
         .pagination button {
-            background: #222; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;
+            background: #222; 
+            color: #fff; 
+            border: none; 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 600;
         }
         .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
         .pagination button.active { background: #E50914; }
@@ -64,7 +126,7 @@
     </div>
 
     <script>
-        const METADATA_URL = "metadata.json"; // Place this next to your index.html
+        const METADATA_URL = "metadata.json";
         let allEntries = [];
         let currentPage = 1;
         const ITEMS_PER_PAGE = 24;
@@ -111,7 +173,7 @@
                     <div style="position:absolute;top:8px;left:8px;background:rgba(229,9,20,0.92);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;">${entry.code}</div>
                 </div>
                 <div style="padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:8px;">
-                    <div style="font-size:13px;font-weight:600;line-height:1.4;min-height:38px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${entry.title || entry.code}</div>
+                    <div style="font-size:13px;font-weight:600;line-height:1.4;min-height:42px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${entry.title || entry.code}</div>
                     <button class="copy-btn"><span style="font-size:12px;">⎘</span> Copy URL</button>
                 </div>
             `;
@@ -139,7 +201,8 @@
                 img.src = urls[tried + 1];
             } else {
                 img.onerror = null;
-                img.parentElement.innerHTML += `<div class="fallback"><div style="font-size:13px;font-weight:800;letter-spacing:2px;color:#E50914;text-align:center;padding:0 12px;">${img.closest('.card').querySelector('.poster-container div:last-child').textContent}</div></div>`;
+                const fallbackHTML = `<div class="fallback"><div style="font-size:13px;font-weight:800;letter-spacing:2px;color:#E50914;text-align:center;padding:0 12px;">${img.closest('.card').querySelector('.poster-container > div:last-child').textContent}</div></div>`;
+                img.parentElement.innerHTML += fallbackHTML;
             }
         };
 
@@ -153,7 +216,6 @@
             const pageItems = allEntries.slice(start, end);
             
             pageItems.forEach(entry => grid.appendChild(createCard(entry)));
-            
             renderPagination();
         }
 
@@ -184,37 +246,34 @@
             pagination.appendChild(next);
         }
 
-        // Load metadata + playlist
+        // Load
         Promise.all([
             fetch(METADATA_URL).then(r => r.ok ? r.json() : []).catch(() => []),
             fetch("https://raw.githubusercontent.com/Sarker5523/My-Playlists/refs/heads/main/jav.m3u8").then(r => r.text())
         ]).then(([metadata, m3uText]) => {
             let entries = parseM3U8(m3uText);
             
-            // Merge metadata (keyed by code)
-            const metaMap = new Map(metadata.map(m => [m.code, m]));
+            const metaMap = new Map(metadata.map(m => [m.code?.toUpperCase(), m]));
             entries = entries.map(entry => {
-                const meta = metaMap.get(entry.code);
-                return meta ? {...entry, ...meta} : entry;
+                const meta = metaMap.get(entry.code.toUpperCase());
+                return meta ? { ...entry, title: meta.title || entry.title, cover: meta.cover || entry.cover } : entry;
             });
             
             allEntries = entries;
             document.getElementById('stats').textContent = `${allEntries.length} titles`;
-            
             renderPage(1);
             
-            // Search
+            // Search (restores full list when cleared)
+            let fullList = [...entries];
             document.getElementById('search').addEventListener('input', (e) => {
                 const term = e.target.value.toLowerCase().trim();
-                const filtered = allEntries.filter(en => en.code.toLowerCase().includes(term));
-                allEntries = filtered; // temporary for pagination
+                const filtered = term ? fullList.filter(en => en.code.toLowerCase().includes(term)) : fullList;
+                allEntries = filtered;
                 renderPage(1);
-                // Restore full list on empty search
-                if (!term) allEntries = entries;
             });
         }).catch(err => {
             document.getElementById('error').style.display = 'block';
-            document.getElementById('error').innerHTML = 'Failed to load data.<br><small>' + err.message + '</small>';
+            document.getElementById('error').innerHTML = 'Failed to load data.';
         });
     </script>
 </body>
