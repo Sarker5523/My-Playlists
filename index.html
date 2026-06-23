@@ -10,8 +10,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: #0A0A0A; color: #e8e8e8; font-family: 'Inter', sans-serif; }
         
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        
         .grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
@@ -19,19 +17,12 @@
         }
         
         @media (max-width: 480px) {
-            .grid { 
-                grid-template-columns: repeat(2, 1fr); 
-                gap: 16px 12px; 
-            }
+            .grid { grid-template-columns: repeat(2, 1fr); gap: 16px 12px; }
         }
         
         .card { 
-            background: #141414; 
-            border-radius: 8px; 
-            overflow: hidden; 
-            display: flex; 
-            flex-direction: column; 
-            transition: all 0.22s; 
+            background: #141414; border-radius: 8px; overflow: hidden; 
+            display: flex; flex-direction: column; transition: all 0.22s; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
         }
         .card:hover { 
@@ -40,76 +31,84 @@
         }
         
         .poster-container { 
-            position: relative; 
-            padding-top: 56.25%; /* 16:9 landscape */
-            background: #0f0f0f; 
-            overflow: hidden; 
+            position: relative; padding-top: 56.25%; 
+            background: #0f0f0f; overflow: hidden; 
         }
         .poster-img { 
-            position: absolute; 
-            top: 0; left: 0; 
-            width: 100%; height: 100%; 
-            object-fit: cover; 
+            position: absolute; top: 0; left: 0; 
+            width: 100%; height: 100%; object-fit: cover; 
         }
         .fallback { 
-            position: absolute; 
-            inset: 0; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            flex-direction: column; 
+            position: absolute; inset: 0; display: flex; 
+            align-items: center; justify-content: center; flex-direction: column; 
             background: linear-gradient(135deg, #1a0a0a, #1a1a2a); 
         }
         
         .copy-btn { 
-            margin-top: 4px; 
-            padding: 7px 0; 
-            background: #222; 
-            color: #fff; 
-            border: none; 
-            border-radius: 5px; 
-            font-size: 11px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            transition: background 0.18s; 
+            margin-top: 4px; padding: 7px 0; background: #222; color: #fff; 
+            border: none; border-radius: 5px; font-size: 11px; font-weight: 700; 
+            cursor: pointer; transition: background 0.18s; width: 100%;
         }
         .copy-btn:hover { background: #E50914; }
         .copy-btn.success { background: #1a6b1a; }
         
         .pagination {
-            display: flex; 
-            justify-content: center; 
-            gap: 12px; 
-            margin: 40px 0; 
-            flex-wrap: wrap;
+            display: flex; justify-content: center; gap: 8px; 
+            margin: 40px 0; flex-wrap: wrap; align-items: center;
         }
         .pagination button {
-            background: #222; 
-            color: #fff; 
-            border: none; 
-            padding: 8px 16px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: 600;
+            background: #222; color: #fff; border: none; 
+            padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600;
+            min-width: 38px; transition: background 0.18s;
         }
+        .pagination button:hover:not(:disabled) { background: #333; }
         .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
         .pagination button.active { background: #E50914; }
+        .pagination .ellipsis { color: #555; padding: 8px 4px; font-weight: 700; }
+
+        .search-wrap { position: relative; }
+        .search-wrap input { 
+            background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; 
+            color: #e8e8e8; padding: 8px 32px 8px 32px; font-size: 13px; 
+            outline: none; width: 240px; transition: border-color 0.18s;
+        }
+        .search-wrap input:focus { border-color: #E50914; }
+        .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #666; font-size: 14px; pointer-events: none; }
+        .search-clear { 
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
+            color: #666; background: none; border: none; cursor: pointer; 
+            font-size: 16px; line-height: 1; padding: 0; display: none;
+            transition: color 0.15s;
+        }
+        .search-clear:hover { color: #E50914; }
+
+        #back-to-top {
+            position: fixed; bottom: 28px; right: 28px; 
+            background: #E50914; color: #fff; border: none; border-radius: 50%;
+            width: 44px; height: 44px; font-size: 20px; cursor: pointer;
+            box-shadow: 0 4px 16px rgba(229,9,20,0.4); opacity: 0;
+            transition: opacity 0.25s, transform 0.25s; pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #back-to-top.visible { opacity: 1; pointer-events: all; }
+        #back-to-top:hover { transform: translateY(-3px); }
     </style>
 </head>
 <body>
-    <div style="min-height: 100vh; background: #0A0A0A;">
-        <header style="padding: 0 clamp(16px,5vw,56px); background: linear-gradient(to bottom,#000 0%,transparent 100%); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(8px); border-bottom: 1px solid #1a1a1a;">
-            <div style="display:flex; align-items:center; gap:24px; height:64px; max-width:1600px; margin:0 auto; flex-wrap:wrap;">
-                <div style="display:flex; align-items:center; gap:10px;">
+    <div style="min-height:100vh;background:#0A0A0A;">
+        <header style="padding:0 clamp(16px,5vw,56px);background:linear-gradient(to bottom,#000 0%,transparent 100%);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px);border-bottom:1px solid #1a1a1a;">
+            <div style="display:flex;align-items:center;gap:24px;height:64px;max-width:1600px;margin:0 auto;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:10px;">
                     <div style="width:32px;height:32px;background:#E50914;border-radius:4px;display:flex;align-items:center;justify-content:center;">
                         <span style="color:#fff;font-size:16px;font-weight:900;">▶</span>
                     </div>
                     <span style="font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.5px;">My<span style="color:#E50914">Shelf</span></span>
                 </div>
                 <div id="stats" style="color:#666;font-size:13px;">Loading…</div>
-                <div style="margin-left:auto;position:relative;">
-                    <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#666;font-size:14px;">⌕</span>
-                    <input id="search" placeholder="Search by code…" style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;color:#e8e8e8;padding:8px 14px 8px 32px;font-size:13px;outline:none;width:240px;">
+                <div style="margin-left:auto;" class="search-wrap">
+                    <span class="search-icon">⌕</span>
+                    <input id="search" placeholder="Search by code or title…" autocomplete="off">
+                    <button class="search-clear" id="search-clear" title="Clear">×</button>
                 </div>
             </div>
         </header>
@@ -125,51 +124,80 @@
         </main>
     </div>
 
+    <button id="back-to-top" title="Back to top">↑</button>
+
     <script>
         const METADATA_URL = "metadata.json";
-        let allEntries = [];
-        let currentPage = 1;
         const ITEMS_PER_PAGE = 24;
+        let allEntries = [];
+        let fullList = [];
+        let currentPage = 1;
 
-        function parseM3U8(text) {
-            const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-            const entries = [];
-            for (let i = 0; i < lines.length; i++) {
-                if (lines[i].startsWith("#EXTINF")) {
-                    const match = lines[i].match(/,(.+)$/);
-                    const code = match ? match[1].trim() : "UNKNOWN";
-                    const url = lines[i+1] && !lines[i+1].startsWith("#") ? lines[i+1].trim() : null;
-                    if (url) entries.push({code, url, title: code, cover: null});
-                }
-            }
-            return entries.reverse(); // Last entry first
+        // ── URL state helpers ─────────────────────────────────
+        function getUrlParams() {
+            const p = new URLSearchParams(window.location.search);
+            return {
+                page: parseInt(p.get('page')) || 1,
+                q: p.get('q') || ''
+            };
         }
 
+        function pushUrlState(page, q) {
+            const url = new URL(window.location);
+            url.searchParams.set('page', page);
+            if (q) url.searchParams.set('q', q); 
+            else url.searchParams.delete('q');
+            window.history.pushState({}, '', url);
+        }
+
+        // ── DMM cover candidates ──────────────────────────────
         function getDmmUrls(code) {
-            const lower = code.toLowerCase().replace(/-/g, '');
             const parts = code.split('-');
             const urls = [];
             if (parts.length === 2) {
                 const prefix = parts[0].toLowerCase();
                 const num = parts[1].padStart(5, '0');
-                urls.push(`https://pics.dmm.co.jp/mono/movie/adult/${lower}/${lower}pl.jpg`);
+                urls.push(`https://pics.dmm.co.jp/digital/video/${prefix}${num}/${prefix}${num}pl.jpg`);
                 urls.push(`https://pics.dmm.co.jp/mono/movie/adult/${prefix}${num}/${prefix}${num}pl.jpg`);
-                urls.push(`https://pics.dmm.co.jp/mono/movie/adult/${prefix}${parts[1]}/${prefix}${parts[1]}pl.jpg`);
             }
-            urls.push(`https://pics.dmm.co.jp/mono/movie/adult/${code.toLowerCase()}/${code.toLowerCase()}pl.jpg`);
             return [...new Set(urls)];
         }
 
+        // ── Image error handler ───────────────────────────────
+        window.handleImgError = function(img, code) {
+            let tried = parseInt(img.dataset.tried || 0);
+            const urls = img.dataset.dmm.split('|');
+            if (urls[tried + 1]) {
+                img.dataset.tried = tried + 1;
+                img.src = urls[tried + 1];
+            } else {
+                img.onerror = null;
+                img.style.display = 'none';
+                const fb = document.createElement('div');
+                fb.className = 'fallback';
+                fb.innerHTML = `<div style="font-size:13px;font-weight:800;letter-spacing:2px;color:#E50914;text-align:center;padding:0 12px;">${code}</div>`;
+                img.parentElement.appendChild(fb);
+            }
+        };
+
+        // ── Card builder ──────────────────────────────────────
         function createCard(entry) {
             const card = document.createElement('div');
             card.className = 'card';
             const dmmUrls = getDmmUrls(entry.code);
-            const cover = entry.cover || dmmUrls[0];
+            const cover = entry.cover || dmmUrls[0] || '';
 
             card.innerHTML = `
                 <div class="poster-container">
-                    <img src="${cover}" class="poster-img" data-dmm="${dmmUrls.join('|')}" data-tried="0" onerror="handleImgError(this)">
-                    <div style="position:absolute;bottom:0;left:0;right:0;height:40%;background:linear-gradient(to top,rgba(0,0,0,0.85),transparent);opacity:0;transition:opacity .22s;pointer-events:none;"></div>
+                    <img 
+                        src="${cover}" 
+                        class="poster-img" 
+                        loading="lazy"
+                        data-dmm="${dmmUrls.join('|')}" 
+                        data-tried="0" 
+                        onerror="handleImgError(this, '${entry.code.replace(/'/g, "\\'")}')"
+                        alt="${entry.code}"
+                    >
                     <div style="position:absolute;top:8px;left:8px;background:rgba(229,9,20,0.92);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;">${entry.code}</div>
                 </div>
                 <div style="padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:8px;">
@@ -184,94 +212,148 @@
                     const orig = btn.innerHTML;
                     btn.textContent = '✓ Copied!';
                     btn.classList.add('success');
-                    setTimeout(() => {
-                        btn.innerHTML = orig;
-                        btn.classList.remove('success');
-                    }, 1800);
+                    setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('success'); }, 1800);
                 });
             };
             return card;
         }
 
-        window.handleImgError = function(img) {
-            let tried = parseInt(img.dataset.tried || 0);
-            const urls = img.dataset.dmm.split('|');
-            if (urls[tried + 1]) {
-                img.dataset.tried = tried + 1;
-                img.src = urls[tried + 1];
-            } else {
-                img.onerror = null;
-                const fallbackHTML = `<div class="fallback"><div style="font-size:13px;font-weight:800;letter-spacing:2px;color:#E50914;text-align:center;padding:0 12px;">${img.closest('.card').querySelector('.poster-container > div:last-child').textContent}</div></div>`;
-                img.parentElement.innerHTML += fallbackHTML;
-            }
-        };
+        // ── Pagination ────────────────────────────────────────
+        function renderPagination(totalPages) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            if (totalPages <= 1) return;
 
-        function renderPage(page) {
+            const addBtn = (label, page, disabled, active) => {
+                const btn = document.createElement('button');
+                btn.textContent = label;
+                if (disabled) btn.disabled = true;
+                if (active) btn.classList.add('active');
+                if (!disabled) btn.onclick = () => renderPage(page);
+                pagination.appendChild(btn);
+            };
+
+            const addEllipsis = () => {
+                const s = document.createElement('span');
+                s.className = 'ellipsis';
+                s.textContent = '…';
+                pagination.appendChild(s);
+            };
+
+            addBtn('← Prev', currentPage - 1, currentPage === 1, false);
+
+            // Always show: first, last, current ±2, with ellipsis gaps
+            const pages = new Set([1, totalPages]);
+            for (let i = Math.max(2, currentPage - 2); i <= Math.min(totalPages - 1, currentPage + 2); i++) pages.add(i);
+            const sorted = [...pages].sort((a, b) => a - b);
+
+            let prev = 0;
+            for (const p of sorted) {
+                if (p - prev > 1) addEllipsis();
+                addBtn(p, p, false, p === currentPage);
+                prev = p;
+            }
+
+            addBtn('Next →', currentPage + 1, currentPage === totalPages, false);
+        }
+
+        // ── Render page ───────────────────────────────────────
+        function renderPage(page, skipPush) {
             currentPage = page;
             const grid = document.getElementById('grid');
             grid.innerHTML = '';
-            
+
             const start = (page - 1) * ITEMS_PER_PAGE;
-            const end = start + ITEMS_PER_PAGE;
-            const pageItems = allEntries.slice(start, end);
-            
+            const pageItems = allEntries.slice(start, start + ITEMS_PER_PAGE);
             pageItems.forEach(entry => grid.appendChild(createCard(entry)));
-            renderPagination();
-        }
 
-        function renderPagination() {
             const totalPages = Math.ceil(allEntries.length / ITEMS_PER_PAGE);
-            const pagination = document.getElementById('pagination');
-            pagination.innerHTML = '';
-            
-            const prev = document.createElement('button');
-            prev.textContent = '← Prev';
-            prev.disabled = currentPage === 1;
-            prev.onclick = () => renderPage(currentPage - 1);
-            pagination.appendChild(prev);
-            
-            for (let i = 1; i <= totalPages; i++) {
-                if (totalPages > 7 && i > 3 && i < totalPages - 2 && Math.abs(i - currentPage) > 2) continue;
-                const btn = document.createElement('button');
-                btn.textContent = i;
-                btn.classList.toggle('active', i === currentPage);
-                btn.onclick = () => renderPage(i);
-                pagination.appendChild(btn);
+            renderPagination(totalPages);
+
+            if (!skipPush) {
+                const q = document.getElementById('search').value.trim();
+                pushUrlState(page, q);
             }
-            
-            const next = document.createElement('button');
-            next.textContent = 'Next →';
-            next.disabled = currentPage === totalPages;
-            next.onclick = () => renderPage(currentPage + 1);
-            pagination.appendChild(next);
+
+            // Scroll to top smoothly
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Load
+        // ── Apply search filter ───────────────────────────────
+        function applySearch(term, page) {
+            const t = term.toLowerCase().trim();
+            allEntries = t
+                ? fullList.filter(e => 
+                    e.code.toLowerCase().includes(t) || 
+                    (e.title && e.title.toLowerCase().includes(t))
+                  )
+                : [...fullList];
+            document.getElementById('stats').textContent = 
+                t ? `${allEntries.length} of ${fullList.length} titles` : `${fullList.length} titles`;
+            renderPage(page || 1);
+        }
+
+        // ── Back to top ───────────────────────────────────────
+        const backBtn = document.getElementById('back-to-top');
+        window.addEventListener('scroll', () => {
+            backBtn.classList.toggle('visible', window.scrollY > 400);
+        });
+        backBtn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // ── Search input wiring ───────────────────────────────
+        const searchEl = document.getElementById('search');
+        const clearBtn = document.getElementById('search-clear');
+
+        searchEl.addEventListener('input', (e) => {
+            const val = e.target.value;
+            clearBtn.style.display = val ? 'block' : 'none';
+            applySearch(val, 1);
+        });
+
+        clearBtn.onclick = () => {
+            searchEl.value = '';
+            clearBtn.style.display = 'none';
+            applySearch('', 1);
+        };
+
+        // ── Handle browser back/forward ───────────────────────
+        window.addEventListener('popstate', () => {
+            const { page, q } = getUrlParams();
+            searchEl.value = q;
+            clearBtn.style.display = q ? 'block' : 'none';
+            applySearch(q, page);
+        });
+
+        // ── Load ──────────────────────────────────────────────
         Promise.all([
             fetch(METADATA_URL).then(r => r.ok ? r.json() : []).catch(() => []),
             fetch("https://raw.githubusercontent.com/Sarker5523/My-Playlists/refs/heads/main/jav.m3u8").then(r => r.text())
         ]).then(([metadata, m3uText]) => {
-            let entries = parseM3U8(m3uText);
-            
+            const lines = m3uText.split("\n").map(l => l.trim()).filter(Boolean);
+            const entries = [];
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].startsWith("#EXTINF")) {
+                    const match = lines[i].match(/,(.+)$/);
+                    const code = match ? match[1].trim() : "UNKNOWN";
+                    const url = lines[i+1] && !lines[i+1].startsWith("#") ? lines[i+1].trim() : null;
+                    if (url) entries.push({ code, url, title: code, cover: null });
+                }
+            }
+            entries.reverse(); // newest first
+
             const metaMap = new Map(metadata.map(m => [m.code?.toUpperCase(), m]));
-            entries = entries.map(entry => {
+            fullList = entries.map(entry => {
                 const meta = metaMap.get(entry.code.toUpperCase());
                 return meta ? { ...entry, title: meta.title || entry.title, cover: meta.cover || entry.cover } : entry;
             });
-            
-            allEntries = entries;
-            document.getElementById('stats').textContent = `${allEntries.length} titles`;
-            renderPage(1);
-            
-            // Search (restores full list when cleared)
-            let fullList = [...entries];
-            document.getElementById('search').addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase().trim();
-                const filtered = term ? fullList.filter(en => en.code.toLowerCase().includes(term)) : fullList;
-                allEntries = filtered;
-                renderPage(1);
-            });
-        }).catch(err => {
+
+            // Restore state from URL
+            const { page, q } = getUrlParams();
+            searchEl.value = q;
+            clearBtn.style.display = q ? 'block' : 'none';
+            applySearch(q, page);
+
+        }).catch(() => {
             document.getElementById('error').style.display = 'block';
             document.getElementById('error').innerHTML = 'Failed to load data.';
         });
