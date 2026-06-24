@@ -295,12 +295,14 @@ window.handleImgError = function(img, code) {
         img.parentElement.appendChild(fb);
     }
 };
-
+function toUuid(hex) {
+    return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
 // ── TPDB fetch ────────────────────────────────────────────
 async function fetchTpdb(parentId) {
     if (tpdbCache[parentId]) return tpdbCache[parentId];
     try {
-        const res = await fetch(`https://api.theporndb.net/scenes/${parentId}?add_to_collection=false`, {
+      const res = await fetch(`https://api.theporndb.net/scenes/${toUuid(parentId)}?add_to_collection=false`, {
             headers: { 'accept': 'application/json', 'Authorization': `Bearer ${TPDB_TOKEN}` }
         });
         if (!res.ok) return null;
