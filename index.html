@@ -3,360 +3,628 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyShelf - JAV Collection</title>
+    <title>MyShelf</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
-        
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: #0A0A0A; color: #e8e8e8; font-family: 'Inter', sans-serif; }
-        
-        .grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
-            gap: 20px 16px; 
+
+        /* ── Toggle ── */
+        .mode-toggle {
+            display: flex; align-items: center;
+            background: #1a1a1a; border: 1px solid #2a2a2a;
+            border-radius: 8px; padding: 3px; gap: 2px;
         }
-        
+        .mode-btn {
+            padding: 6px 18px; border: none; border-radius: 6px;
+            font-size: 12px; font-weight: 700; cursor: pointer;
+            transition: background 0.18s, color 0.18s; background: transparent; color: #666;
+            letter-spacing: 0.5px;
+        }
+        .mode-btn.active-jav { background: #E50914; color: #fff; }
+        .mode-btn.active-irl { background: #7c3aed; color: #fff; }
+        .mode-btn:not(.active-jav):not(.active-irl):hover { color: #ccc; }
+
+        /* ── Grid ── */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px 16px;
+        }
         @media (max-width: 480px) {
             .grid { grid-template-columns: repeat(2, 1fr); gap: 16px 12px; }
         }
-        
-        .card { 
-            background: #141414; border-radius: 8px; overflow: hidden; 
-            display: flex; flex-direction: column; transition: all 0.22s; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
+
+        /* ── Card ── */
+        .card {
+            background: #141414; border-radius: 8px; overflow: hidden;
+            display: flex; flex-direction: column; transition: all 0.22s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }
-        .card:hover { 
-            transform: scale(1.04) translateY(-4px); 
-            box-shadow: 0 8px 32px rgba(229,9,20,0.28), 0 2px 8px rgba(0,0,0,0.5); 
+        .card:hover {
+            transform: scale(1.04) translateY(-4px);
         }
-        
-        .poster-container { 
-            position: relative; padding-top: 56.25%; 
-            background: #0f0f0f; overflow: hidden; 
+        .card.jav-card:hover {
+            box-shadow: 0 8px 32px rgba(229,9,20,0.28), 0 2px 8px rgba(0,0,0,0.5);
         }
-        .poster-img { 
-            position: absolute; top: 0; left: 0; 
-            width: 100%; height: 100%; object-fit: cover; 
+        .card.irl-card:hover {
+            box-shadow: 0 8px 32px rgba(124,58,237,0.32), 0 2px 8px rgba(0,0,0,0.5);
         }
-        .fallback { 
-            position: absolute; inset: 0; display: flex; 
-            align-items: center; justify-content: center; flex-direction: column; 
-            background: linear-gradient(135deg, #1a0a0a, #1a1a2a); 
+
+        .poster-container {
+            position: relative; padding-top: 56.25%;
+            background: #0f0f0f; overflow: hidden;
         }
-        
-        .copy-btn { 
-            margin-top: 4px; padding: 7px 0; background: #222; color: #fff; 
-            border: none; border-radius: 5px; font-size: 11px; font-weight: 700; 
+        .poster-img {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; object-fit: cover;
+        }
+        .fallback {
+            position: absolute; inset: 0; display: flex;
+            align-items: center; justify-content: center; flex-direction: column;
+            background: linear-gradient(135deg, #1a0a0a, #1a1a2a);
+        }
+
+        .badge {
+            position: absolute; top: 8px; left: 8px;
+            color: #fff; font-size: 10px; font-weight: 700;
+            padding: 2px 7px; border-radius: 3px;
+        }
+        .badge-jav { background: rgba(229,9,20,0.92); }
+        .badge-irl { background: rgba(124,58,237,0.92); }
+
+        /* Card body */
+        .card-body {
+            padding: 12px 14px; flex: 1; display: flex; flex-direction: column; gap: 6px;
+        }
+        .card-title {
+            font-size: 13px; font-weight: 600; line-height: 1.4;
+            overflow: hidden; display: -webkit-box;
+            -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+        }
+        .card-meta {
+            display: flex; flex-direction: column; gap: 3px; margin-top: 2px;
+        }
+        .meta-row {
+            font-size: 11px; color: #888; line-height: 1.3;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .meta-label { color: #555; font-weight: 600; margin-right: 3px; }
+        .meta-performers { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        .copy-btn {
+            margin-top: 6px; padding: 7px 0; background: #222; color: #fff;
+            border: none; border-radius: 5px; font-size: 11px; font-weight: 700;
             cursor: pointer; transition: background 0.18s; width: 100%;
         }
         .copy-btn:hover { background: #E50914; }
-        .copy-btn.success { background: #1a6b1a; }
-        
+        .copy-btn.irl:hover { background: #7c3aed; }
+        .copy-btn.success { background: #1a6b1a !important; }
+
+        /* Skeleton loader */
+        .skeleton {
+            background: #141414; border-radius: 8px; overflow: hidden;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        .skeleton-img { padding-top: 56.25%; background: #1f1f1f; }
+        .skeleton-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+        .skeleton-line { height: 12px; background: #222; border-radius: 4px; }
+        .skeleton-line.short { width: 60%; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; } 50% { opacity: 0.5; }
+        }
+
+        /* Pagination */
         .pagination {
-            display: flex; justify-content: center; gap: 8px; 
+            display: flex; justify-content: center; gap: 8px;
             margin: 40px 0; flex-wrap: wrap; align-items: center;
         }
         .pagination button {
-            background: #222; color: #fff; border: none; 
+            background: #222; color: #fff; border: none;
             padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600;
             min-width: 38px; transition: background 0.18s;
         }
         .pagination button:hover:not(:disabled) { background: #333; }
         .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
-        .pagination button.active { background: #E50914; }
+        .pagination button.active-jav { background: #E50914; }
+        .pagination button.active-irl { background: #7c3aed; }
         .pagination .ellipsis { color: #555; padding: 8px 4px; font-weight: 700; }
 
+        /* Search */
         .search-wrap { position: relative; }
-        .search-wrap input { 
-            background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; 
-            color: #e8e8e8; padding: 8px 32px 8px 32px; font-size: 13px; 
+        .search-wrap input {
+            background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px;
+            color: #e8e8e8; padding: 8px 32px 8px 32px; font-size: 13px;
             outline: none; width: 240px; transition: border-color 0.18s;
         }
         .search-wrap input:focus { border-color: #E50914; }
+        .search-wrap input.irl-focus:focus { border-color: #7c3aed; }
         .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #666; font-size: 14px; pointer-events: none; }
-        .search-clear { 
-            position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
-            color: #666; background: none; border: none; cursor: pointer; 
+        .search-clear {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            color: #666; background: none; border: none; cursor: pointer;
             font-size: 16px; line-height: 1; padding: 0; display: none;
             transition: color 0.15s;
         }
         .search-clear:hover { color: #E50914; }
 
+        /* Back to top */
         #back-to-top {
-            position: fixed; bottom: 28px; right: 28px; 
+            position: fixed; bottom: 28px; right: 28px;
             background: #E50914; color: #fff; border: none; border-radius: 50%;
             width: 44px; height: 44px; font-size: 20px; cursor: pointer;
             box-shadow: 0 4px 16px rgba(229,9,20,0.4); opacity: 0;
-            transition: opacity 0.25s, transform 0.25s; pointer-events: none;
+            transition: opacity 0.25s, transform 0.25s, background 0.25s; pointer-events: none;
             display: flex; align-items: center; justify-content: center;
         }
         #back-to-top.visible { opacity: 1; pointer-events: all; }
         #back-to-top:hover { transform: translateY(-3px); }
+        #back-to-top.irl { background: #7c3aed; box-shadow: 0 4px 16px rgba(124,58,237,0.4); }
+
+        /* IRL loading spinner */
+        .irl-loading {
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px; padding: 12px 0 4px; font-size: 12px; color: #666;
+        }
+        .spinner {
+            width: 14px; height: 14px; border: 2px solid #333;
+            border-top-color: #7c3aed; border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div style="min-height:100vh;background:#0A0A0A;">
-        <header style="padding:0 clamp(16px,5vw,56px);background:linear-gradient(to bottom,#000 0%,transparent 100%);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px);border-bottom:1px solid #1a1a1a;">
-            <div style="display:flex;align-items:center;gap:24px;height:64px;max-width:1600px;margin:0 auto;flex-wrap:wrap;">
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <div style="width:32px;height:32px;background:#E50914;border-radius:4px;display:flex;align-items:center;justify-content:center;">
-                        <span style="color:#fff;font-size:16px;font-weight:900;">▶</span>
-                    </div>
-                    <span style="font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.5px;">My<span style="color:#E50914">Shelf</span></span>
+<div style="min-height:100vh;background:#0A0A0A;">
+
+    <!-- Header -->
+    <header style="padding:0 clamp(16px,5vw,56px);background:linear-gradient(to bottom,#000 0%,transparent 100%);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px);border-bottom:1px solid #1a1a1a;">
+        <div style="display:flex;align-items:center;gap:16px;height:64px;max-width:1600px;margin:0 auto;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:32px;height:32px;background:#E50914;border-radius:4px;display:flex;align-items:center;justify-content:center;">
+                    <span style="color:#fff;font-size:16px;font-weight:900;">▶</span>
                 </div>
-                <div id="stats" style="color:#666;font-size:13px;">Loading…</div>
-                <div style="margin-left:auto;" class="search-wrap">
-                    <span class="search-icon">⌕</span>
-                    <input id="search" placeholder="Search by code or title…" autocomplete="off">
-                    <button class="search-clear" id="search-clear" title="Clear">×</button>
-                </div>
+                <span style="font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.5px;">My<span style="color:#E50914">Shelf</span></span>
             </div>
-        </header>
 
-        <main style="max-width:1600px;margin:0 auto;padding:32px clamp(16px,5vw,56px) 64px;">
-            <div style="margin-bottom:28px;display:flex;align-items:center;gap:12px;">
-                <div style="width:4px;height:24px;background:#E50914;border-radius:2px;"></div>
-                <h2 style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.3px;">All Titles</h2>
+            <!-- Mode Toggle -->
+            <div class="mode-toggle">
+                <button class="mode-btn active-jav" id="btn-jav" onclick="switchMode('jav')">JAV</button>
+                <button class="mode-btn" id="btn-irl" onclick="switchMode('irl')">IRL</button>
             </div>
-            <div id="error" style="display:none;text-align:center;color:#E50914;padding:48px;font-size:15px;"></div>
-            <div id="grid" class="grid"></div>
-            <div id="pagination" class="pagination"></div>
-        </main>
-    </div>
 
-    <button id="back-to-top" title="Back to top">↑</button>
+            <div id="stats" style="color:#666;font-size:13px;">Loading…</div>
+            <div style="margin-left:auto;" class="search-wrap">
+                <span class="search-icon">⌕</span>
+                <input id="search" placeholder="Search…" autocomplete="off">
+                <button class="search-clear" id="search-clear" title="Clear">×</button>
+            </div>
+        </div>
+    </header>
 
-    <script>
-        const METADATA_URL = "metadata.json";
-        const ITEMS_PER_PAGE = 24;
-        let allEntries = [];
-        let fullList = [];
-        let currentPage = 1;
+    <!-- Main -->
+    <main style="max-width:1600px;margin:0 auto;padding:32px clamp(16px,5vw,56px) 64px;">
+        <div style="margin-bottom:28px;display:flex;align-items:center;gap:12px;">
+            <div id="section-bar" style="width:4px;height:24px;background:#E50914;border-radius:2px;transition:background 0.25s;"></div>
+            <h2 id="section-title" style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.3px;">All Titles</h2>
+        </div>
+        <div id="error" style="display:none;text-align:center;color:#E50914;padding:48px;font-size:15px;"></div>
+        <div id="grid" class="grid"></div>
+        <div id="pagination" class="pagination"></div>
+    </main>
+</div>
 
-        // ── URL state helpers ─────────────────────────────────
-        function getUrlParams() {
-            const p = new URLSearchParams(window.location.search);
-            return {
-                page: parseInt(p.get('page')) || 1,
-                q: p.get('q') || ''
+<button id="back-to-top" title="Back to top">↑</button>
+
+<script>
+// ── Config ────────────────────────────────────────────────
+const JAV_M3U8_URL   = "https://raw.githubusercontent.com/Sarker5523/My-Playlists/refs/heads/main/jav.m3u8";
+const JAV_META_URL   = "metadata.json";
+const IRL_META_URL   = "irl-metadata.json";
+const IRL_M3U8_URL   = "irl.m3u8";
+const TPDB_TOKEN     = "Aor5JIDSkxOhmXmNAOYP5Gnr73u7u3UPJZYaevBT2558d467";
+const ITEMS_PER_PAGE = 24;
+
+let mode         = 'jav';   // 'jav' | 'irl'
+let allEntries   = [];
+let fullList     = [];
+let currentPage  = 1;
+
+// Cache fetched TPDB data so we don't re-request on tab switch
+const tpdbCache  = {};
+
+// ── URL state ─────────────────────────────────────────────
+function getUrlParams() {
+    const p = new URLSearchParams(window.location.search);
+    return { page: parseInt(p.get('page')) || 1, q: p.get('q') || '', mode: p.get('mode') || 'jav' };
+}
+function pushUrlState(page, q, m) {
+    const url = new URL(window.location);
+    url.searchParams.set('page', page);
+    url.searchParams.set('mode', m || mode);
+    if (q) url.searchParams.set('q', q); else url.searchParams.delete('q');
+    window.history.pushState({}, '', url);
+}
+
+// ── Mode switch ───────────────────────────────────────────
+function switchMode(m) {
+    if (mode === m) return;
+    mode = m;
+    updateModeUI();
+    loadMode();
+}
+
+function updateModeUI() {
+    const isIrl = mode === 'irl';
+    document.getElementById('btn-jav').className = 'mode-btn' + (mode === 'jav' ? ' active-jav' : '');
+    document.getElementById('btn-irl').className = 'mode-btn' + (isIrl ? ' active-irl' : '');
+    document.getElementById('section-bar').style.background = isIrl ? '#7c3aed' : '#E50914';
+    document.getElementById('section-title').textContent = isIrl ? 'IRL Titles' : 'All Titles';
+    document.getElementById('search').className = isIrl ? 'irl-focus' : '';
+    document.querySelector('.search-clear').style.setProperty('--hover', isIrl ? '#7c3aed' : '#E50914');
+    const btt = document.getElementById('back-to-top');
+    if (isIrl) btt.classList.add('irl'); else btt.classList.remove('irl');
+}
+
+// ── DMM cover helpers (JAV) ───────────────────────────────
+function getDmmUrls(code) {
+    const parts = code.split('-');
+    const urls = [];
+    if (parts.length === 2) {
+        const prefix = parts[0].toLowerCase();
+        const num = parts[1].padStart(5, '0');
+        urls.push(`https://pics.dmm.co.jp/digital/video/${prefix}${num}/${prefix}${num}pl.jpg`);
+        urls.push(`https://pics.dmm.co.jp/mono/movie/adult/${prefix}${num}/${prefix}${num}pl.jpg`);
+    }
+    return [...new Set(urls)];
+}
+
+window.handleImgError = function(img, code) {
+    let tried = parseInt(img.dataset.tried || 0);
+    const urls = img.dataset.dmm ? img.dataset.dmm.split('|') : [];
+    if (urls[tried + 1]) {
+        img.dataset.tried = tried + 1;
+        img.src = urls[tried + 1];
+    } else {
+        img.onerror = null;
+        img.style.display = 'none';
+        const fb = document.createElement('div');
+        fb.className = 'fallback';
+        fb.innerHTML = `<div style="font-size:13px;font-weight:800;letter-spacing:2px;color:${mode==='irl'?'#7c3aed':'#E50914'};text-align:center;padding:0 12px;">${code}</div>`;
+        img.parentElement.appendChild(fb);
+    }
+};
+
+// ── TPDB fetch ────────────────────────────────────────────
+async function fetchTpdb(parentId) {
+    if (tpdbCache[parentId]) return tpdbCache[parentId];
+    try {
+        const res = await fetch(`https://api.theporndb.net/scenes/${parentId}?add_to_collection=false`, {
+            headers: { 'accept': 'application/json', 'Authorization': `Bearer ${TPDB_TOKEN}` }
+        });
+        if (!res.ok) return null;
+        const json = await res.json();
+        const d = json.data || json;
+        tpdbCache[parentId] = d;
+        return d;
+    } catch { return null; }
+}
+
+// ── Card builders ─────────────────────────────────────────
+function createJavCard(entry) {
+    const card = document.createElement('div');
+    card.className = 'card jav-card';
+    const dmmUrls = getDmmUrls(entry.code);
+    const cover = entry.cover || dmmUrls[0] || '';
+
+    card.innerHTML = `
+        <div class="poster-container">
+            <img src="${cover}" class="poster-img" loading="lazy"
+                data-dmm="${dmmUrls.join('|')}" data-tried="0"
+                onerror="handleImgError(this,'${entry.code.replace(/'/g,"\\'")}')"
+                alt="${entry.code}">
+            <div class="badge badge-jav">${entry.code}</div>
+        </div>
+        <div class="card-body">
+            <div class="card-title">${entry.title || entry.code}</div>
+            <button class="copy-btn jav-copy"><span style="font-size:12px;">⎘</span> Copy URL</button>
+        </div>`;
+
+    card.querySelector('.copy-btn').onclick = () => copyUrl(card.querySelector('.copy-btn'), entry.url, false);
+    return card;
+}
+
+function createIrlCard(entry) {
+    const card = document.createElement('div');
+    card.className = 'card irl-card';
+
+    card.innerHTML = `
+        <div class="poster-container">
+            <div class="fallback" id="fb-${entry.parentId}">
+                <div class="spinner"></div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="card-title" id="title-${entry.parentId}">${entry.name}</div>
+            <div class="card-meta" id="meta-${entry.parentId}">
+                <div class="irl-loading"><div class="spinner"></div><span>Fetching details…</span></div>
+            </div>
+            <button class="copy-btn irl"><span style="font-size:12px;">⎘</span> Copy URL</button>
+        </div>`;
+
+    card.querySelector('.copy-btn').onclick = () => copyUrl(card.querySelector('.copy-btn'), entry.url, true);
+
+    // Async populate from TPDB
+    fetchTpdb(entry.parentId).then(data => {
+        if (!data) {
+            document.getElementById(`meta-${entry.parentId}`).innerHTML = '';
+            return;
+        }
+
+        // Poster
+        const posterEl = card.querySelector('.poster-container');
+        const fb = document.getElementById(`fb-${entry.parentId}`);
+        const poster = data.background?.medium || data.posters?.[0]?.url || data.image || data.poster || '';
+        if (poster) {
+            const img = document.createElement('img');
+            img.className = 'poster-img';
+            img.loading = 'lazy';
+            img.src = poster;
+            img.alt = data.title || entry.name;
+            img.onerror = () => {
+                img.remove();
+                fb.innerHTML = `<div style="font-size:12px;font-weight:800;letter-spacing:1px;color:#7c3aed;text-align:center;padding:0 12px;">${entry.name}</div>`;
             };
+            posterEl.insertBefore(img, fb);
+            fb.remove();
+        } else {
+            fb.innerHTML = `<div style="font-size:12px;font-weight:800;letter-spacing:1px;color:#7c3aed;text-align:center;padding:0 12px;">${entry.name}</div>`;
         }
 
-        function pushUrlState(page, q) {
-            const url = new URL(window.location);
-            url.searchParams.set('page', page);
-            if (q) url.searchParams.set('q', q); 
-            else url.searchParams.delete('q');
-            window.history.pushState({}, '', url);
+        // Badge (site name)
+        const site = data.site?.name || data.studio?.name || '';
+        if (site) {
+            const badge = document.createElement('div');
+            badge.className = 'badge badge-irl';
+            badge.textContent = site;
+            posterEl.appendChild(badge);
         }
 
-        // ── DMM cover candidates ──────────────────────────────
-        function getDmmUrls(code) {
-            const parts = code.split('-');
-            const urls = [];
-            if (parts.length === 2) {
-                const prefix = parts[0].toLowerCase();
-                const num = parts[1].padStart(5, '0');
-                urls.push(`https://pics.dmm.co.jp/digital/video/${prefix}${num}/${prefix}${num}pl.jpg`);
-                urls.push(`https://pics.dmm.co.jp/mono/movie/adult/${prefix}${num}/${prefix}${num}pl.jpg`);
-            }
-            return [...new Set(urls)];
-        }
+        // Title
+        const titleEl = document.getElementById(`title-${entry.parentId}`);
+        if (titleEl && data.title) titleEl.textContent = data.title;
 
-        // ── Image error handler ───────────────────────────────
-        window.handleImgError = function(img, code) {
-            let tried = parseInt(img.dataset.tried || 0);
-            const urls = img.dataset.dmm.split('|');
-            if (urls[tried + 1]) {
-                img.dataset.tried = tried + 1;
-                img.src = urls[tried + 1];
-            } else {
-                img.onerror = null;
-                img.style.display = 'none';
-                const fb = document.createElement('div');
-                fb.className = 'fallback';
-                fb.innerHTML = `<div style="font-size:13px;font-weight:800;letter-spacing:2px;color:#E50914;text-align:center;padding:0 12px;">${code}</div>`;
-                img.parentElement.appendChild(fb);
-            }
+        // Meta rows
+        const metaEl = document.getElementById(`meta-${entry.parentId}`);
+        if (!metaEl) return;
+        metaEl.innerHTML = '';
+
+        const addMeta = (label, value) => {
+            if (!value) return;
+            const row = document.createElement('div');
+            row.className = 'meta-row' + (label === 'Cast' ? ' meta-performers' : '');
+            row.innerHTML = `<span class="meta-label">${label}</span>${value}`;
+            metaEl.appendChild(row);
         };
 
-        // ── Card builder ──────────────────────────────────────
-        function createCard(entry) {
-            const card = document.createElement('div');
-            card.className = 'card';
-            const dmmUrls = getDmmUrls(entry.code);
-            const cover = entry.cover || dmmUrls[0] || '';
+        // Performers
+        const performers = (data.performers || []).map(p => p.name || p).filter(Boolean);
+        addMeta('Cast', performers.slice(0, 6).join(', ') + (performers.length > 6 ? ` +${performers.length - 6}` : ''));
 
-            card.innerHTML = `
-                <div class="poster-container">
-                    <img 
-                        src="${cover}" 
-                        class="poster-img" 
-                        loading="lazy"
-                        data-dmm="${dmmUrls.join('|')}" 
-                        data-tried="0" 
-                        onerror="handleImgError(this, '${entry.code.replace(/'/g, "\\'")}')"
-                        alt="${entry.code}"
-                    >
-                    <div style="position:absolute;top:8px;left:8px;background:rgba(229,9,20,0.92);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;">${entry.code}</div>
-                </div>
-                <div style="padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:8px;">
-                    <div style="font-size:13px;font-weight:600;line-height:1.4;min-height:42px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${entry.title || entry.code}</div>
-                    <button class="copy-btn"><span style="font-size:12px;">⎘</span> Copy URL</button>
-                </div>
-            `;
+        // Studio / site
+        addMeta('Studio', data.site?.name || data.studio?.name || '');
 
-            card.querySelector('.copy-btn').onclick = () => {
-                navigator.clipboard.writeText(entry.url).then(() => {
-                    const btn = card.querySelector('.copy-btn');
-                    const orig = btn.innerHTML;
-                    btn.textContent = '✓ Copied!';
-                    btn.classList.add('success');
-                    setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('success'); }, 1800);
-                });
-            };
-            return card;
+        // Date
+        const date = data.date || data.release_date || '';
+        if (date) addMeta('Date', date.slice(0, 10));
+
+        // Duration
+        const dur = data.duration;
+        if (dur) {
+            const h = Math.floor(dur / 3600), m = Math.floor((dur % 3600) / 60);
+            addMeta('Duration', h ? `${h}h ${m}m` : `${m}m`);
         }
 
-        // ── Pagination ────────────────────────────────────────
-        function renderPagination(totalPages) {
-            const pagination = document.getElementById('pagination');
-            pagination.innerHTML = '';
-            if (totalPages <= 1) return;
+        // Tags (first 5)
+        const tags = (data.tags || data.categories || []).map(t => t.name || t).filter(Boolean);
+        if (tags.length) addMeta('Tags', tags.slice(0, 5).join(', '));
 
-            const addBtn = (label, page, disabled, active) => {
-                const btn = document.createElement('button');
-                btn.textContent = label;
-                if (disabled) btn.disabled = true;
-                if (active) btn.classList.add('active');
-                if (!disabled) btn.onclick = () => renderPage(page);
-                pagination.appendChild(btn);
-            };
+    });
 
-            const addEllipsis = () => {
-                const s = document.createElement('span');
-                s.className = 'ellipsis';
-                s.textContent = '…';
-                pagination.appendChild(s);
-            };
+    return card;
+}
 
-            addBtn('← Prev', currentPage - 1, currentPage === 1, false);
+function copyUrl(btn, url, isIrl) {
+    navigator.clipboard.writeText(url).then(() => {
+        const orig = btn.innerHTML;
+        btn.textContent = '✓ Copied!';
+        btn.classList.add('success');
+        setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('success'); }, 1800);
+    });
+}
 
-            // Always show: first, last, current ±2, with ellipsis gaps
-            const pages = new Set([1, totalPages]);
-            for (let i = Math.max(2, currentPage - 2); i <= Math.min(totalPages - 1, currentPage + 2); i++) pages.add(i);
-            const sorted = [...pages].sort((a, b) => a - b);
+// ── Skeleton loaders ──────────────────────────────────────
+function showSkeletons(count) {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+        grid.innerHTML += `<div class="skeleton">
+            <div class="skeleton-img"></div>
+            <div class="skeleton-body">
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line short"></div>
+            </div>
+        </div>`;
+    }
+}
 
-            let prev = 0;
-            for (const p of sorted) {
-                if (p - prev > 1) addEllipsis();
-                addBtn(p, p, false, p === currentPage);
-                prev = p;
+// ── Pagination ────────────────────────────────────────────
+function renderPagination(totalPages) {
+    const pg = document.getElementById('pagination');
+    pg.innerHTML = '';
+    if (totalPages <= 1) return;
+
+    const addBtn = (label, page, disabled, active) => {
+        const btn = document.createElement('button');
+        btn.textContent = label;
+        if (disabled) btn.disabled = true;
+        if (active) btn.classList.add(mode === 'irl' ? 'active-irl' : 'active-jav');
+        if (!disabled) btn.onclick = () => renderPage(page);
+        pg.appendChild(btn);
+    };
+    const addEllipsis = () => {
+        const s = document.createElement('span');
+        s.className = 'ellipsis'; s.textContent = '…'; pg.appendChild(s);
+    };
+
+    addBtn('← Prev', currentPage - 1, currentPage === 1, false);
+    const pages = new Set([1, totalPages]);
+    for (let i = Math.max(2, currentPage - 2); i <= Math.min(totalPages - 1, currentPage + 2); i++) pages.add(i);
+    const sorted = [...pages].sort((a, b) => a - b);
+    let prev = 0;
+    for (const p of sorted) {
+        if (p - prev > 1) addEllipsis();
+        addBtn(p, p, false, p === currentPage);
+        prev = p;
+    }
+    addBtn('Next →', currentPage + 1, currentPage === totalPages, false);
+}
+
+// ── Render page ───────────────────────────────────────────
+function renderPage(page, skipPush) {
+    currentPage = page;
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    const pageItems = allEntries.slice(start, start + ITEMS_PER_PAGE);
+    pageItems.forEach(entry => {
+        grid.appendChild(mode === 'jav' ? createJavCard(entry) : createIrlCard(entry));
+    });
+
+    renderPagination(Math.ceil(allEntries.length / ITEMS_PER_PAGE));
+    if (!skipPush) {
+        const q = document.getElementById('search').value.trim();
+        pushUrlState(page, q, mode);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Search ────────────────────────────────────────────────
+function applySearch(term, page) {
+    const t = term.toLowerCase().trim();
+    allEntries = t ? fullList.filter(e =>
+        (e.code || e.name || '').toLowerCase().includes(t) ||
+        (e.title || '').toLowerCase().includes(t)
+    ) : [...fullList];
+    document.getElementById('stats').textContent =
+        t ? `${allEntries.length} of ${fullList.length} titles` : `${fullList.length} titles`;
+    renderPage(page || 1);
+}
+
+// ── Load JAV ──────────────────────────────────────────────
+async function loadJav() {
+    showSkeletons(ITEMS_PER_PAGE);
+    try {
+        const [metadata, m3uText] = await Promise.all([
+            fetch(JAV_META_URL).then(r => r.ok ? r.json() : []).catch(() => []),
+            fetch(JAV_M3U8_URL).then(r => r.text())
+        ]);
+        const lines = m3uText.split('\n').map(l => l.trim()).filter(Boolean);
+        const entries = [];
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].startsWith('#EXTINF')) {
+                const match = lines[i].match(/,(.+)$/);
+                const code = match ? match[1].trim() : 'UNKNOWN';
+                const url = lines[i+1] && !lines[i+1].startsWith('#') ? lines[i+1].trim() : null;
+                if (url) entries.push({ code, url, title: code, cover: null });
             }
-
-            addBtn('Next →', currentPage + 1, currentPage === totalPages, false);
         }
-
-        // ── Render page ───────────────────────────────────────
-        function renderPage(page, skipPush) {
-            currentPage = page;
-            const grid = document.getElementById('grid');
-            grid.innerHTML = '';
-
-            const start = (page - 1) * ITEMS_PER_PAGE;
-            const pageItems = allEntries.slice(start, start + ITEMS_PER_PAGE);
-            pageItems.forEach(entry => grid.appendChild(createCard(entry)));
-
-            const totalPages = Math.ceil(allEntries.length / ITEMS_PER_PAGE);
-            renderPagination(totalPages);
-
-            if (!skipPush) {
-                const q = document.getElementById('search').value.trim();
-                pushUrlState(page, q);
-            }
-
-            // Scroll to top smoothly
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // ── Apply search filter ───────────────────────────────
-        function applySearch(term, page) {
-            const t = term.toLowerCase().trim();
-            allEntries = t
-                ? fullList.filter(e => 
-                    e.code.toLowerCase().includes(t) || 
-                    (e.title && e.title.toLowerCase().includes(t))
-                  )
-                : [...fullList];
-            document.getElementById('stats').textContent = 
-                t ? `${allEntries.length} of ${fullList.length} titles` : `${fullList.length} titles`;
-            renderPage(page || 1);
-        }
-
-        // ── Back to top ───────────────────────────────────────
-        const backBtn = document.getElementById('back-to-top');
-        window.addEventListener('scroll', () => {
-            backBtn.classList.toggle('visible', window.scrollY > 400);
+        entries.reverse();
+        const metaMap = new Map(metadata.map(m => [m.code?.toUpperCase(), m]));
+        fullList = entries.map(entry => {
+            const meta = metaMap.get(entry.code.toUpperCase());
+            return meta ? { ...entry, title: meta.title || entry.title, cover: meta.cover || entry.cover } : entry;
         });
-        backBtn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+        const { page, q } = getUrlParams();
+        document.getElementById('search').value = q;
+        document.getElementById('search-clear').style.display = q ? 'block' : 'none';
+        applySearch(q, page);
+    } catch {
+        showError('Failed to load JAV data.');
+    }
+}
 
-        // ── Search input wiring ───────────────────────────────
-        const searchEl = document.getElementById('search');
-        const clearBtn = document.getElementById('search-clear');
+// ── Load IRL ──────────────────────────────────────────────
+async function loadIrl() {
+    showSkeletons(ITEMS_PER_PAGE);
+    try {
+        const irlMeta = await fetch(IRL_META_URL).then(r => r.ok ? r.json() : []).catch(() => []);
+        fullList = irlMeta.map(entry => ({
+            name: entry.Name || 'Unknown',
+            parentId: entry.ParentId,
+            url: entry.Url,
+            title: entry.Name || 'Unknown'
+        }));
+        fullList.reverse();
+        const { page, q } = getUrlParams();
+        document.getElementById('search').value = q;
+        document.getElementById('search-clear').style.display = q ? 'block' : 'none';
+        applySearch(q, page);
+    } catch {
+        showError('Failed to load IRL data.');
+    }
+}
 
-        searchEl.addEventListener('input', (e) => {
-            const val = e.target.value;
-            clearBtn.style.display = val ? 'block' : 'none';
-            applySearch(val, 1);
-        });
+function loadMode() {
+    document.getElementById('stats').textContent = 'Loading…';
+    document.getElementById('error').style.display = 'none';
+    fullList = []; allEntries = []; currentPage = 1;
+    document.getElementById('search').value = '';
+    document.getElementById('search-clear').style.display = 'none';
+    if (mode === 'jav') loadJav(); else loadIrl();
+}
 
-        clearBtn.onclick = () => {
-            searchEl.value = '';
-            clearBtn.style.display = 'none';
-            applySearch('', 1);
-        };
+function showError(msg) {
+    document.getElementById('grid').innerHTML = '';
+    document.getElementById('error').style.display = 'block';
+    document.getElementById('error').textContent = msg;
+}
 
-        // ── Handle browser back/forward ───────────────────────
-        window.addEventListener('popstate', () => {
-            const { page, q } = getUrlParams();
-            searchEl.value = q;
-            clearBtn.style.display = q ? 'block' : 'none';
-            applySearch(q, page);
-        });
+// ── Back to top ───────────────────────────────────────────
+const backBtn = document.getElementById('back-to-top');
+window.addEventListener('scroll', () => backBtn.classList.toggle('visible', window.scrollY > 400));
+backBtn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        // ── Load ──────────────────────────────────────────────
-        Promise.all([
-            fetch(METADATA_URL).then(r => r.ok ? r.json() : []).catch(() => []),
-            fetch("https://raw.githubusercontent.com/Sarker5523/My-Playlists/refs/heads/main/jav.m3u8").then(r => r.text())
-        ]).then(([metadata, m3uText]) => {
-            const lines = m3uText.split("\n").map(l => l.trim()).filter(Boolean);
-            const entries = [];
-            for (let i = 0; i < lines.length; i++) {
-                if (lines[i].startsWith("#EXTINF")) {
-                    const match = lines[i].match(/,(.+)$/);
-                    const code = match ? match[1].trim() : "UNKNOWN";
-                    const url = lines[i+1] && !lines[i+1].startsWith("#") ? lines[i+1].trim() : null;
-                    if (url) entries.push({ code, url, title: code, cover: null });
-                }
-            }
-            entries.reverse(); // newest first
+// ── Search wiring ─────────────────────────────────────────
+const searchEl = document.getElementById('search');
+const clearBtn = document.getElementById('search-clear');
+searchEl.addEventListener('input', e => {
+    const val = e.target.value;
+    clearBtn.style.display = val ? 'block' : 'none';
+    applySearch(val, 1);
+});
+clearBtn.onclick = () => {
+    searchEl.value = ''; clearBtn.style.display = 'none'; applySearch('', 1);
+};
 
-            const metaMap = new Map(metadata.map(m => [m.code?.toUpperCase(), m]));
-            fullList = entries.map(entry => {
-                const meta = metaMap.get(entry.code.toUpperCase());
-                return meta ? { ...entry, title: meta.title || entry.title, cover: meta.cover || entry.cover } : entry;
-            });
+// ── Browser back/forward ──────────────────────────────────
+window.addEventListener('popstate', () => {
+    const { page, q, mode: m } = getUrlParams();
+    if (m !== mode) { mode = m; updateModeUI(); loadMode(); return; }
+    searchEl.value = q;
+    clearBtn.style.display = q ? 'block' : 'none';
+    applySearch(q, page);
+});
 
-            // Restore state from URL
-            const { page, q } = getUrlParams();
-            searchEl.value = q;
-            clearBtn.style.display = q ? 'block' : 'none';
-            applySearch(q, page);
-
-        }).catch(() => {
-            document.getElementById('error').style.display = 'block';
-            document.getElementById('error').innerHTML = 'Failed to load data.';
-        });
-    </script>
+// ── Init ──────────────────────────────────────────────────
+(function init() {
+    const { mode: m } = getUrlParams();
+    mode = (m === 'irl') ? 'irl' : 'jav';
+    updateModeUI();
+    loadMode();
+})();
+</script>
 </body>
 </html>
