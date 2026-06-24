@@ -27,13 +27,15 @@
         .mode-btn:not(.active-jav):not(.active-irl):hover { color: #ccc; }
 
         /* ── Sort ── */
+        #sort-wrap {
+            display: none; /* hidden by default, shown only in IRL mode */
+        }
         #sort-select {
             background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px;
             color: #e8e8e8; padding: 7px 10px; font-size: 12px; font-weight: 700;
             cursor: pointer; outline: none; transition: border-color 0.18s;
         }
-        #sort-select:focus { border-color: #E50914; }
-        #sort-select.irl-sort:focus { border-color: #7c3aed; }
+        #sort-select:focus { border-color: #7c3aed; }
 
         /* ── Grid ── */
         .grid {
@@ -170,6 +172,13 @@
             animation: spin 0.7s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* IRL date-fetch progress */
+        #date-fetch-status {
+            display: none; align-items: center; gap: 10px;
+            font-size: 12px; color: #666; padding: 4px 0;
+        }
+        #date-fetch-status .spinner { border-top-color: #7c3aed; }
     </style>
 </head>
 <body>
@@ -191,11 +200,19 @@
                 <button class="mode-btn" id="btn-irl" onclick="switchMode('irl')">IRL</button>
             </div>
 
-            <!-- Sort -->
-            <select id="sort-select">
-                <option value="newest">↓ Newest</option>
-                <option value="oldest">↑ Oldest</option>
-            </select>
+            <!-- Sort (IRL only) -->
+            <div id="sort-wrap">
+                <select id="sort-select">
+                    <option value="newest">↓ Newest</option>
+                    <option value="oldest">↑ Oldest</option>
+                </select>
+            </div>
+
+            <!-- Date fetch progress (IRL only) -->
+            <div id="date-fetch-status">
+                <div class="spinner"></div>
+                <span id="date-fetch-text">Fetching dates…</span>
+            </div>
 
             <div id="stats" style="color:#666;font-size:13px;">Loading…</div>
             <div style="margin-left:auto;" class="search-wrap">
@@ -227,11 +244,12 @@ const JAV_META_URL   = "metadata.json";
 const IRL_META_URL   = "irl-metadata.json";
 const TPDB_TOKEN     = "Aor5JIDSkxOhmXmNAOYP5Gnr73u7u3UPJZYaevBT2558d467";
 const ITEMS_PER_PAGE = 24;
+const TPDB_CONCURRENCY = 8; // parallel requests at once
 
 let mode        = 'jav';
 let allEntries  = [];
 let fullList    = [];
-let masterList  = []; // original order (newest first)
+let masterList  = [];
 let currentPage = 1;
 let sortOrder   = 'newest';
 
@@ -246,7 +264,8 @@ function pushUrlState(page, q, m, sort) {
     const url = new URL(window.location);
     url.searchParams.set('page', page);
     url.searchParams.set('mode', m || mode);
-    url.searchParams.set('sort', sort || sortOrder);
+    if (mode === 'irl') url.searchParams.set('sort', sort || sortOrder);
+    else url.searchParams.delete('sort');
     if (q) url.searchParams.set('q', q); else url.searchParams.delete('q');
     window.history.pushState({}, '', url);
 }
@@ -266,15 +285,27 @@ function updateModeUI() {
     document.getElementById('section-bar').style.background = isIrl ? '#7c3aed' : '#E50914';
     document.getElementById('section-title').textContent = isIrl ? 'IRL Titles' : 'All Titles';
     document.getElementById('search').className = isIrl ? 'irl-focus' : '';
-    const sortEl = document.getElementById('sort-select');
-    if (isIrl) sortEl.classList.add('irl-sort'); else sortEl.classList.remove('irl-sort');
+    // Show sort only for IRL
+    document.getElementById('sort-wrap').style.display = isIrl ? 'block' : 'none';
     const btt = document.getElementById('back-to-top');
     if (isIrl) btt.classList.add('irl'); else btt.classList.remove('irl');
 }
 
 // ── Sort ──────────────────────────────────────────────────
+// JAV: no date, just keep natural m3u8 order (no sort applied)
+// IRL: sort by entry.date (YYYY-MM-DD string from TPDB)
 function applySort() {
-    fullList = sortOrder === 'oldest' ? [...masterList].reverse() : [...masterList];
+    if (mode === 'jav') {
+        fullList = [...masterList];
+        return;
+    }
+    // IRL: date-based sort
+    const sorted = [...masterList].sort((a, b) => {
+        const da = a.date || '0000-00-00';
+        const db = b.date || '0000-00-00';
+        return da < db ? 1 : da > db ? -1 : 0; // newest first by default
+    });
+    fullList = sortOrder === 'oldest' ? sorted.reverse() : sorted;
 }
 
 document.getElementById('sort-select').addEventListener('change', e => {
@@ -307,12 +338,12 @@ window.handleImgError = function(img, code) {
         img.style.display = 'none';
         const fb = document.createElement('div');
         fb.className = 'fallback';
-        fb.innerHTML = `<div style="font-size:13px;font-weight:800;letter-spacing:2px;color:${mode==='irl'?'#7c3aed':'#E50914'};text-align:center;padding:0 12px;">${code}</div>`;
+        fb.innerHTML = `<div style="font-size:13px;font-weight:800;letter-spacing:2px;color:#E50914;text-align:center;padding:0 12px;">${code}</div>`;
         img.parentElement.appendChild(fb);
     }
 };
 
-// ── TPDB fetch ────────────────────────────────────────────
+// ── TPDB fetch (single scene) ─────────────────────────────
 async function fetchTpdb(parentId) {
     if (tpdbCache[parentId]) return tpdbCache[parentId];
     try {
@@ -325,6 +356,31 @@ async function fetchTpdb(parentId) {
         tpdbCache[parentId] = d;
         return d;
     } catch { return null; }
+}
+
+// ── Fetch all IRL dates upfront (with concurrency limit) ──
+async function fetchAllIrlDates(entries) {
+    const statusEl = document.getElementById('date-fetch-status');
+    const textEl   = document.getElementById('date-fetch-text');
+    statusEl.style.display = 'flex';
+
+    let completed = 0;
+    const total = entries.length;
+
+    // Process in batches of TPDB_CONCURRENCY
+    for (let i = 0; i < entries.length; i += TPDB_CONCURRENCY) {
+        const batch = entries.slice(i, i + TPDB_CONCURRENCY);
+        await Promise.all(batch.map(async entry => {
+            const data = await fetchTpdb(entry.parentId);
+            if (data) {
+                entry.date = data.date || data.release_date || null;
+            }
+            completed++;
+            textEl.textContent = `Fetching dates… ${completed}/${total}`;
+        }));
+    }
+
+    statusEl.style.display = 'none';
 }
 
 // ── Card builders ─────────────────────────────────────────
@@ -371,6 +427,7 @@ function createIrlCard(entry) {
 
     card.querySelector('.copy-btn').onclick = () => copyUrl(card.querySelector('.copy-btn'), entry.url, true);
 
+    // Data already cached from the date-prefetch, so this resolves instantly
     fetchTpdb(entry.parentId).then(data => {
         if (!data) {
             const metaEl = document.getElementById(`meta-${entry.parentId}`);
@@ -542,13 +599,14 @@ async function loadJav() {
                 if (url) entries.push({ code, url, title: code, cover: null });
             }
         }
-        entries.reverse(); // newest first
+        // No date available for JAV — keep natural m3u8 order (newest = last appended = reverse)
+        entries.reverse();
         const metaMap = new Map(metadata.map(m => [m.code?.toUpperCase(), m]));
         masterList = entries.map(entry => {
             const meta = metaMap.get(entry.code.toUpperCase());
             return meta ? { ...entry, title: meta.title || entry.title, cover: meta.cover || entry.cover } : entry;
         });
-        applySort();
+        applySort(); // just copies masterList for JAV
         const { page, q } = getUrlParams();
         document.getElementById('search').value = q;
         document.getElementById('search-clear').style.display = q ? 'block' : 'none';
@@ -563,13 +621,21 @@ async function loadIrl() {
     showSkeletons(ITEMS_PER_PAGE);
     try {
         const irlMeta = await fetch(IRL_META_URL).then(r => r.ok ? r.json() : []).catch(() => []);
-        masterList = irlMeta.map(entry => ({
+        const rawList = irlMeta.map(entry => ({
             name: entry.Name || 'Unknown',
             parentId: entry.ParentId,
             url: entry.Url,
-            title: entry.Name || 'Unknown'
-        })).reverse(); // newest first
-        applySort();
+            title: entry.Name || 'Unknown',
+            date: null // will be filled by fetchAllIrlDates
+        }));
+
+        document.getElementById('stats').textContent = `${rawList.length} titles`;
+
+        // Fetch all dates upfront so sorting is accurate
+        await fetchAllIrlDates(rawList);
+
+        masterList = rawList;
+        applySort(); // sort by date now that all dates are loaded
         const { page, q } = getUrlParams();
         document.getElementById('search').value = q;
         document.getElementById('search-clear').style.display = q ? 'block' : 'none';
@@ -582,6 +648,7 @@ async function loadIrl() {
 function loadMode() {
     document.getElementById('stats').textContent = 'Loading…';
     document.getElementById('error').style.display = 'none';
+    document.getElementById('date-fetch-status').style.display = 'none';
     masterList = []; fullList = []; allEntries = []; currentPage = 1;
     sortOrder = 'newest';
     document.getElementById('sort-select').value = 'newest';
@@ -617,9 +684,11 @@ clearBtn.onclick = () => {
 window.addEventListener('popstate', () => {
     const { page, q, mode: m, sort } = getUrlParams();
     if (m !== mode) { mode = m; updateModeUI(); loadMode(); return; }
-    sortOrder = sort || 'newest';
-    document.getElementById('sort-select').value = sortOrder;
-    applySort();
+    if (mode === 'irl') {
+        sortOrder = sort || 'newest';
+        document.getElementById('sort-select').value = sortOrder;
+        applySort();
+    }
     searchEl.value = q;
     clearBtn.style.display = q ? 'block' : 'none';
     applySearch(q, page);
