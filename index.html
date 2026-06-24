@@ -26,6 +26,15 @@
         .mode-btn.active-irl { background: #7c3aed; color: #fff; }
         .mode-btn:not(.active-jav):not(.active-irl):hover { color: #ccc; }
 
+        /* ── Sort ── */
+        #sort-select {
+            background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px;
+            color: #e8e8e8; padding: 7px 10px; font-size: 12px; font-weight: 700;
+            cursor: pointer; outline: none; transition: border-color 0.18s;
+        }
+        #sort-select:focus { border-color: #E50914; }
+        #sort-select.irl-sort:focus { border-color: #7c3aed; }
+
         /* ── Grid ── */
         .grid {
             display: grid;
@@ -42,15 +51,9 @@
             display: flex; flex-direction: column; transition: all 0.22s;
             box-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }
-        .card:hover {
-            transform: scale(1.04) translateY(-4px);
-        }
-        .card.jav-card:hover {
-            box-shadow: 0 8px 32px rgba(229,9,20,0.28), 0 2px 8px rgba(0,0,0,0.5);
-        }
-        .card.irl-card:hover {
-            box-shadow: 0 8px 32px rgba(124,58,237,0.32), 0 2px 8px rgba(0,0,0,0.5);
-        }
+        .card:hover { transform: scale(1.04) translateY(-4px); }
+        .card.jav-card:hover { box-shadow: 0 8px 32px rgba(229,9,20,0.28), 0 2px 8px rgba(0,0,0,0.5); }
+        .card.irl-card:hover { box-shadow: 0 8px 32px rgba(124,58,237,0.32), 0 2px 8px rgba(0,0,0,0.5); }
 
         .poster-container {
             position: relative; padding-top: 56.25%;
@@ -74,7 +77,6 @@
         .badge-jav { background: rgba(229,9,20,0.92); }
         .badge-irl { background: rgba(124,58,237,0.92); }
 
-        /* Card body */
         .card-body {
             padding: 12px 14px; flex: 1; display: flex; flex-direction: column; gap: 6px;
         }
@@ -83,9 +85,7 @@
             overflow: hidden; display: -webkit-box;
             -webkit-line-clamp: 2; -webkit-box-orient: vertical;
         }
-        .card-meta {
-            display: flex; flex-direction: column; gap: 3px; margin-top: 2px;
-        }
+        .card-meta { display: flex; flex-direction: column; gap: 3px; margin-top: 2px; }
         .meta-row {
             font-size: 11px; color: #888; line-height: 1.3;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -102,7 +102,7 @@
         .copy-btn.irl:hover { background: #7c3aed; }
         .copy-btn.success { background: #1a6b1a !important; }
 
-        /* Skeleton loader */
+        /* Skeleton */
         .skeleton {
             background: #141414; border-radius: 8px; overflow: hidden;
             animation: pulse 1.5s ease-in-out infinite;
@@ -111,9 +111,7 @@
         .skeleton-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
         .skeleton-line { height: 12px; background: #222; border-radius: 4px; }
         .skeleton-line.short { width: 60%; }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; } 50% { opacity: 0.5; }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
         /* Pagination */
         .pagination {
@@ -144,8 +142,7 @@
         .search-clear {
             position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
             color: #666; background: none; border: none; cursor: pointer;
-            font-size: 16px; line-height: 1; padding: 0; display: none;
-            transition: color 0.15s;
+            font-size: 16px; line-height: 1; padding: 0; display: none; transition: color 0.15s;
         }
         .search-clear:hover { color: #E50914; }
 
@@ -162,7 +159,7 @@
         #back-to-top:hover { transform: translateY(-3px); }
         #back-to-top.irl { background: #7c3aed; box-shadow: 0 4px 16px rgba(124,58,237,0.4); }
 
-        /* IRL loading spinner */
+        /* IRL spinner */
         .irl-loading {
             display: flex; align-items: center; justify-content: center;
             gap: 10px; padding: 12px 0 4px; font-size: 12px; color: #666;
@@ -194,6 +191,12 @@
                 <button class="mode-btn" id="btn-irl" onclick="switchMode('irl')">IRL</button>
             </div>
 
+            <!-- Sort -->
+            <select id="sort-select">
+                <option value="newest">↓ Newest</option>
+                <option value="oldest">↑ Oldest</option>
+            </select>
+
             <div id="stats" style="color:#666;font-size:13px;">Loading…</div>
             <div style="margin-left:auto;" class="search-wrap">
                 <span class="search-icon">⌕</span>
@@ -222,27 +225,28 @@
 const JAV_M3U8_URL   = "https://raw.githubusercontent.com/Sarker5523/My-Playlists/refs/heads/main/jav.m3u8";
 const JAV_META_URL   = "metadata.json";
 const IRL_META_URL   = "irl-metadata.json";
-const IRL_M3U8_URL   = "irl.m3u8";
 const TPDB_TOKEN     = "Aor5JIDSkxOhmXmNAOYP5Gnr73u7u3UPJZYaevBT2558d467";
 const ITEMS_PER_PAGE = 24;
 
-let mode         = 'jav';   // 'jav' | 'irl'
-let allEntries   = [];
-let fullList     = [];
-let currentPage  = 1;
+let mode        = 'jav';
+let allEntries  = [];
+let fullList    = [];
+let masterList  = []; // original order (newest first)
+let currentPage = 1;
+let sortOrder   = 'newest';
 
-// Cache fetched TPDB data so we don't re-request on tab switch
-const tpdbCache  = {};
+const tpdbCache = {};
 
 // ── URL state ─────────────────────────────────────────────
 function getUrlParams() {
     const p = new URLSearchParams(window.location.search);
-    return { page: parseInt(p.get('page')) || 1, q: p.get('q') || '', mode: p.get('mode') || 'jav' };
+    return { page: parseInt(p.get('page')) || 1, q: p.get('q') || '', mode: p.get('mode') || 'jav', sort: p.get('sort') || 'newest' };
 }
-function pushUrlState(page, q, m) {
+function pushUrlState(page, q, m, sort) {
     const url = new URL(window.location);
     url.searchParams.set('page', page);
     url.searchParams.set('mode', m || mode);
+    url.searchParams.set('sort', sort || sortOrder);
     if (q) url.searchParams.set('q', q); else url.searchParams.delete('q');
     window.history.pushState({}, '', url);
 }
@@ -262,10 +266,22 @@ function updateModeUI() {
     document.getElementById('section-bar').style.background = isIrl ? '#7c3aed' : '#E50914';
     document.getElementById('section-title').textContent = isIrl ? 'IRL Titles' : 'All Titles';
     document.getElementById('search').className = isIrl ? 'irl-focus' : '';
-    document.querySelector('.search-clear').style.setProperty('--hover', isIrl ? '#7c3aed' : '#E50914');
+    const sortEl = document.getElementById('sort-select');
+    if (isIrl) sortEl.classList.add('irl-sort'); else sortEl.classList.remove('irl-sort');
     const btt = document.getElementById('back-to-top');
     if (isIrl) btt.classList.add('irl'); else btt.classList.remove('irl');
 }
+
+// ── Sort ──────────────────────────────────────────────────
+function applySort() {
+    fullList = sortOrder === 'oldest' ? [...masterList].reverse() : [...masterList];
+}
+
+document.getElementById('sort-select').addEventListener('change', e => {
+    sortOrder = e.target.value;
+    applySort();
+    applySearch(document.getElementById('search').value, 1);
+});
 
 // ── DMM cover helpers (JAV) ───────────────────────────────
 function getDmmUrls(code) {
@@ -295,11 +311,12 @@ window.handleImgError = function(img, code) {
         img.parentElement.appendChild(fb);
     }
 };
+
 // ── TPDB fetch ────────────────────────────────────────────
 async function fetchTpdb(parentId) {
     if (tpdbCache[parentId]) return tpdbCache[parentId];
     try {
-      const res = await fetch(`https://api.theporndb.net/scenes/${parentId}?add_to_collection=false`, {
+        const res = await fetch(`https://api.theporndb.net/scenes/${parentId}?add_to_collection=false`, {
             headers: { 'accept': 'application/json', 'Authorization': `Bearer ${TPDB_TOKEN}` }
         });
         if (!res.ok) return null;
@@ -354,14 +371,13 @@ function createIrlCard(entry) {
 
     card.querySelector('.copy-btn').onclick = () => copyUrl(card.querySelector('.copy-btn'), entry.url, true);
 
-    // Async populate from TPDB
     fetchTpdb(entry.parentId).then(data => {
         if (!data) {
-            document.getElementById(`meta-${entry.parentId}`).innerHTML = '';
+            const metaEl = document.getElementById(`meta-${entry.parentId}`);
+            if (metaEl) metaEl.innerHTML = '';
             return;
         }
 
-        // Poster
         const posterEl = card.querySelector('.poster-container');
         const fb = document.getElementById(`fb-${entry.parentId}`);
         const poster = data.background?.medium || data.posters?.[0]?.url || data.image || data.poster || '';
@@ -373,15 +389,13 @@ function createIrlCard(entry) {
             img.alt = data.title || entry.name;
             img.onerror = () => {
                 img.remove();
-                fb.innerHTML = `<div style="font-size:12px;font-weight:800;letter-spacing:1px;color:#7c3aed;text-align:center;padding:0 12px;">${entry.name}</div>`;
+                if (fb) fb.innerHTML = `<div style="font-size:12px;font-weight:800;letter-spacing:1px;color:#7c3aed;text-align:center;padding:0 12px;">${entry.name}</div>`;
             };
-            posterEl.insertBefore(img, fb);
-            fb.remove();
+            if (fb) { posterEl.insertBefore(img, fb); fb.remove(); }
         } else {
-            fb.innerHTML = `<div style="font-size:12px;font-weight:800;letter-spacing:1px;color:#7c3aed;text-align:center;padding:0 12px;">${entry.name}</div>`;
+            if (fb) fb.innerHTML = `<div style="font-size:12px;font-weight:800;letter-spacing:1px;color:#7c3aed;text-align:center;padding:0 12px;">${entry.name}</div>`;
         }
 
-        // Badge (site name)
         const site = data.site?.name || data.studio?.name || '';
         if (site) {
             const badge = document.createElement('div');
@@ -390,11 +404,9 @@ function createIrlCard(entry) {
             posterEl.appendChild(badge);
         }
 
-        // Title
         const titleEl = document.getElementById(`title-${entry.parentId}`);
         if (titleEl && data.title) titleEl.textContent = data.title;
 
-        // Meta rows
         const metaEl = document.getElementById(`meta-${entry.parentId}`);
         if (!metaEl) return;
         metaEl.innerHTML = '';
@@ -407,28 +419,18 @@ function createIrlCard(entry) {
             metaEl.appendChild(row);
         };
 
-        // Performers
         const performers = (data.performers || []).map(p => p.name || p).filter(Boolean);
         addMeta('Cast', performers.slice(0, 6).join(', ') + (performers.length > 6 ? ` +${performers.length - 6}` : ''));
-
-        // Studio / site
         addMeta('Studio', data.site?.name || data.studio?.name || '');
-
-        // Date
         const date = data.date || data.release_date || '';
         if (date) addMeta('Date', date.slice(0, 10));
-
-        // Duration
         const dur = data.duration;
         if (dur) {
             const h = Math.floor(dur / 3600), m = Math.floor((dur % 3600) / 60);
             addMeta('Duration', h ? `${h}h ${m}m` : `${m}m`);
         }
-
-        // Tags (first 5)
         const tags = (data.tags || data.categories || []).map(t => t.name || t).filter(Boolean);
         if (tags.length) addMeta('Tags', tags.slice(0, 5).join(', '));
-
     });
 
     return card;
@@ -443,7 +445,7 @@ function copyUrl(btn, url, isIrl) {
     });
 }
 
-// ── Skeleton loaders ──────────────────────────────────────
+// ── Skeletons ─────────────────────────────────────────────
 function showSkeletons(count) {
     const grid = document.getElementById('grid');
     grid.innerHTML = '';
@@ -505,7 +507,7 @@ function renderPage(page, skipPush) {
     renderPagination(Math.ceil(allEntries.length / ITEMS_PER_PAGE));
     if (!skipPush) {
         const q = document.getElementById('search').value.trim();
-        pushUrlState(page, q, mode);
+        pushUrlState(page, q, mode, sortOrder);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -540,12 +542,13 @@ async function loadJav() {
                 if (url) entries.push({ code, url, title: code, cover: null });
             }
         }
-        entries.reverse();
+        entries.reverse(); // newest first
         const metaMap = new Map(metadata.map(m => [m.code?.toUpperCase(), m]));
-        fullList = entries.map(entry => {
+        masterList = entries.map(entry => {
             const meta = metaMap.get(entry.code.toUpperCase());
             return meta ? { ...entry, title: meta.title || entry.title, cover: meta.cover || entry.cover } : entry;
         });
+        applySort();
         const { page, q } = getUrlParams();
         document.getElementById('search').value = q;
         document.getElementById('search-clear').style.display = q ? 'block' : 'none';
@@ -560,13 +563,13 @@ async function loadIrl() {
     showSkeletons(ITEMS_PER_PAGE);
     try {
         const irlMeta = await fetch(IRL_META_URL).then(r => r.ok ? r.json() : []).catch(() => []);
-        fullList = irlMeta.map(entry => ({
+        masterList = irlMeta.map(entry => ({
             name: entry.Name || 'Unknown',
             parentId: entry.ParentId,
             url: entry.Url,
             title: entry.Name || 'Unknown'
-        }));
-        fullList.reverse();
+        })).reverse(); // newest first
+        applySort();
         const { page, q } = getUrlParams();
         document.getElementById('search').value = q;
         document.getElementById('search-clear').style.display = q ? 'block' : 'none';
@@ -579,7 +582,9 @@ async function loadIrl() {
 function loadMode() {
     document.getElementById('stats').textContent = 'Loading…';
     document.getElementById('error').style.display = 'none';
-    fullList = []; allEntries = []; currentPage = 1;
+    masterList = []; fullList = []; allEntries = []; currentPage = 1;
+    sortOrder = 'newest';
+    document.getElementById('sort-select').value = 'newest';
     document.getElementById('search').value = '';
     document.getElementById('search-clear').style.display = 'none';
     if (mode === 'jav') loadJav(); else loadIrl();
@@ -610,8 +615,11 @@ clearBtn.onclick = () => {
 
 // ── Browser back/forward ──────────────────────────────────
 window.addEventListener('popstate', () => {
-    const { page, q, mode: m } = getUrlParams();
+    const { page, q, mode: m, sort } = getUrlParams();
     if (m !== mode) { mode = m; updateModeUI(); loadMode(); return; }
+    sortOrder = sort || 'newest';
+    document.getElementById('sort-select').value = sortOrder;
+    applySort();
     searchEl.value = q;
     clearBtn.style.display = q ? 'block' : 'none';
     applySearch(q, page);
@@ -619,8 +627,10 @@ window.addEventListener('popstate', () => {
 
 // ── Init ──────────────────────────────────────────────────
 (function init() {
-    const { mode: m } = getUrlParams();
+    const { mode: m, sort } = getUrlParams();
     mode = (m === 'irl') ? 'irl' : 'jav';
+    sortOrder = sort || 'newest';
+    document.getElementById('sort-select').value = sortOrder;
     updateModeUI();
     loadMode();
 })();
