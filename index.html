@@ -27,15 +27,14 @@
         .mode-btn:not(.active-jav):not(.active-irl):hover { color: #ccc; }
 
         /* ── Sort ── */
-        #sort-wrap {
-            display: none; /* hidden by default, shown only in IRL mode */
-        }
+        #sort-wrap { display: none; }
         #sort-select {
             background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px;
             color: #e8e8e8; padding: 7px 10px; font-size: 12px; font-weight: 700;
             cursor: pointer; outline: none; transition: border-color 0.18s;
         }
         #sort-select:focus { border-color: #7c3aed; }
+        #sort-select.jav-sort:focus { border-color: #E50914; }
 
         /* ── Grid ── */
         .grid {
@@ -171,14 +170,27 @@
             border-top-color: #7c3aed; border-radius: 50%;
             animation: spin 0.7s linear infinite;
         }
+        .spinner.jav-spin { border-top-color: #E50914; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* IRL date-fetch progress */
+        /* Date-fetch progress */
         #date-fetch-status {
             display: none; align-items: center; gap: 10px;
             font-size: 12px; color: #666; padding: 4px 0;
         }
-        #date-fetch-status .spinner { border-top-color: #7c3aed; }
+        #date-fetch-status .spinner { border-top-color: #E50914; }
+        #date-fetch-status.irl-fetch .spinner { border-top-color: #7c3aed; }
+
+        /* Source tag on card */
+        .source-tag {
+            position: absolute; bottom: 6px; right: 6px;
+            font-size: 9px; font-weight: 700; padding: 2px 5px;
+            border-radius: 3px; letter-spacing: 0.5px; opacity: 0.85;
+        }
+        .source-r18   { background: #1a3a6b; color: #7ab3ff; }
+        .source-dmm   { background: #1a2a1a; color: #6bcc6b; }
+        .source-javlib { background: #2a1a2a; color: #cc88ff; }
+        .source-local { background: #2a2a1a; color: #ccaa44; }
     </style>
 </head>
 <body>
@@ -200,18 +212,18 @@
                 <button class="mode-btn" id="btn-irl" onclick="switchMode('irl')">IRL</button>
             </div>
 
-            <!-- Sort (IRL only) -->
+            <!-- Sort (both modes) -->
             <div id="sort-wrap">
-                <select id="sort-select">
+                <select id="sort-select" class="jav-sort">
                     <option value="newest">↓ Newest</option>
                     <option value="oldest">↑ Oldest</option>
                 </select>
             </div>
 
-            <!-- Date fetch progress (IRL only) -->
+            <!-- Date fetch progress -->
             <div id="date-fetch-status">
                 <div class="spinner"></div>
-                <span id="date-fetch-text">Fetching dates…</span>
+                <span id="date-fetch-text">Fetching metadata…</span>
             </div>
 
             <div id="stats" style="color:#666;font-size:13px;">Loading…</div>
@@ -239,12 +251,20 @@
 
 <script>
 // ── Config ────────────────────────────────────────────────
-const JAV_M3U8_URL   = "https://raw.githubusercontent.com/Sarker5523/My-Playlists/refs/heads/main/jav.m3u8";
-const JAV_META_URL   = "metadata.json";
-const IRL_META_URL   = "irl-metadata.json";
-const TPDB_TOKEN     = "Aor5JIDSkxOhmXmNAOYP5Gnr73u7u3UPJZYaevBT2558d467";
-const ITEMS_PER_PAGE = 24;
-const TPDB_CONCURRENCY = 8; // parallel requests at once
+const JAV_M3U8_URL      = "https://raw.githubusercontent.com/Sarker5523/My-Playlists/refs/heads/main/jav.m3u8";
+const JAV_META_URL      = "metadata.json";
+const IRL_META_URL      = "irl-metadata.json";
+const TPDB_TOKEN        = "Aor5JIDSkxOhmXmNAOYP5Gnr73u7u3UPJZYaevBT2558d467";
+const ITEMS_PER_PAGE    = 24;
+const TPDB_CONCURRENCY  = 8;
+const JAV_CONCURRENCY   = 6;
+
+// CORS proxies to try in order for scraping
+const CORS_PROXIES = [
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://cors-anywhere.herokuapp.com/${url}`,
+];
 
 let mode        = 'jav';
 let allEntries  = [];
@@ -253,7 +273,8 @@ let masterList  = [];
 let currentPage = 1;
 let sortOrder   = 'newest';
 
-const tpdbCache = {};
+const tpdbCache  = {};
+const javMetaCache = {}; // code → enriched metadata
 
 // ── URL state ─────────────────────────────────────────────
 function getUrlParams() {
@@ -264,8 +285,7 @@ function pushUrlState(page, q, m, sort) {
     const url = new URL(window.location);
     url.searchParams.set('page', page);
     url.searchParams.set('mode', m || mode);
-    if (mode === 'irl') url.searchParams.set('sort', sort || sortOrder);
-    else url.searchParams.delete('sort');
+    url.searchParams.set('sort', sort || sortOrder);
     if (q) url.searchParams.set('q', q); else url.searchParams.delete('q');
     window.history.pushState({}, '', url);
 }
@@ -285,25 +305,22 @@ function updateModeUI() {
     document.getElementById('section-bar').style.background = isIrl ? '#7c3aed' : '#E50914';
     document.getElementById('section-title').textContent = isIrl ? 'IRL Titles' : 'All Titles';
     document.getElementById('search').className = isIrl ? 'irl-focus' : '';
-    // Show sort only for IRL
-    document.getElementById('sort-wrap').style.display = isIrl ? 'block' : 'none';
+    document.getElementById('sort-wrap').style.display = 'block';
+    const sortSel = document.getElementById('sort-select');
+    if (isIrl) { sortSel.classList.remove('jav-sort'); } else { sortSel.classList.add('jav-sort'); }
     const btt = document.getElementById('back-to-top');
     if (isIrl) btt.classList.add('irl'); else btt.classList.remove('irl');
+    // date fetch spinner color
+    const dfs = document.getElementById('date-fetch-status');
+    if (isIrl) dfs.classList.add('irl-fetch'); else dfs.classList.remove('irl-fetch');
 }
 
 // ── Sort ──────────────────────────────────────────────────
-// JAV: no date, just keep natural m3u8 order (no sort applied)
-// IRL: sort by entry.date (YYYY-MM-DD string from TPDB)
 function applySort() {
-    if (mode === 'jav') {
-        fullList = [...masterList];
-        return;
-    }
-    // IRL: date-based sort
     const sorted = [...masterList].sort((a, b) => {
         const da = a.date || '0000-00-00';
         const db = b.date || '0000-00-00';
-        return da < db ? 1 : da > db ? -1 : 0; // newest first by default
+        return da < db ? 1 : da > db ? -1 : 0;
     });
     fullList = sortOrder === 'oldest' ? sorted.reverse() : sorted;
 }
@@ -315,6 +332,12 @@ document.getElementById('sort-select').addEventListener('change', e => {
 });
 
 // ── DMM cover helpers (JAV) ───────────────────────────────
+function getDmmCid(code) {
+    const parts = code.split('-');
+    if (parts.length !== 2) return null;
+    return parts[0].toLowerCase() + parts[1].padStart(5, '0');
+}
+
 function getDmmUrls(code) {
     const parts = code.split('-');
     const urls = [];
@@ -343,7 +366,207 @@ window.handleImgError = function(img, code) {
     }
 };
 
-// ── TPDB fetch (single scene) ─────────────────────────────
+// ── CORS proxy fetch ──────────────────────────────────────
+async function proxiedFetch(url, asText = true) {
+    for (const makeProxy of CORS_PROXIES) {
+        try {
+            const res = await fetch(makeProxy(url), { signal: AbortSignal.timeout(8000) });
+            if (!res.ok) continue;
+            return asText ? await res.text() : await res.json();
+        } catch { continue; }
+    }
+    return null;
+}
+
+// ── JAV metadata enrichment chain ────────────────────────
+// Returns { title, cover, performers, date, studio, duration, source }
+// source: 'r18' | 'dmm' | 'javlib' | 'local'
+
+async function fetchR18Meta(code) {
+    try {
+        // R18.dev public JSON API — no CORS issues
+        const url = `https://api.r18.dev/v2/videos?keyword=${encodeURIComponent(code)}&per_page=3&page=1`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        if (!res.ok) return null;
+        const json = await res.json();
+        const videos = json.videos || json.result || [];
+        // Find best match: exact code match preferred
+        const hit = videos.find(v => {
+            const id = (v.id || v.content_id || '').toUpperCase().replace('_', '-');
+            return id === code.toUpperCase();
+        }) || videos[0];
+        if (!hit) return null;
+
+        const performers = (hit.actresses || hit.cast || []).map(a => a.name || a.name_romaji || a).filter(Boolean);
+        const cover = hit.images?.large?.['1'] || hit.images?.medium?.['1'] || hit.jacket_full_url || hit.jacket_thumb_url || '';
+        const date = (hit.release_date || hit.date || '').slice(0, 10);
+        const studio = hit.maker?.name || hit.label?.name || '';
+        const durationMin = hit.runtime ? Math.round(hit.runtime) : null;
+
+        return { title: hit.title || null, cover, performers, date, studio, duration: durationMin ? durationMin * 60 : null, source: 'r18' };
+    } catch { return null; }
+}
+
+async function fetchDmmMeta(code) {
+    try {
+        const cid = getDmmCid(code);
+        if (!cid) return null;
+        const pageUrl = `https://www.dmm.co.jp/digital/videoa/-/detail/=/cid=${cid}/`;
+        const html = await proxiedFetch(pageUrl, true);
+        if (!html) return null;
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // Title
+        const titleEl = doc.querySelector('h1#title') || doc.querySelector('.productTitle__txt') || doc.querySelector('h1.item-ttl');
+        const title = titleEl ? titleEl.textContent.trim() : null;
+
+        // Cover
+        const coverEl = doc.querySelector('#package-src') || doc.querySelector('.productPreview__item img') || doc.querySelector('img[id*="package"]');
+        const cover = coverEl ? (coverEl.getAttribute('src') || '') : '';
+
+        // Performers — DMM lists them in performer links
+        const perfLinks = [...doc.querySelectorAll('a[href*="/actress/"]')];
+        const performers = [...new Set(perfLinks.map(a => a.textContent.trim()).filter(Boolean))];
+
+        // Date
+        let date = '';
+        const allTds = [...doc.querySelectorAll('td, li, span')];
+        for (const el of allTds) {
+            const text = el.textContent.trim();
+            if (/^\d{4}\/\d{2}\/\d{2}$/.test(text)) {
+                date = text.replace(/\//g, '-');
+                break;
+            }
+        }
+
+        // Studio
+        const studioLink = doc.querySelector('a[href*="/maker/"]');
+        const studio = studioLink ? studioLink.textContent.trim() : '';
+
+        if (!performers.length && !date) return null; // not enough data
+        return { title, cover: cover || '', performers, date, studio, duration: null, source: 'dmm' };
+    } catch { return null; }
+}
+
+async function fetchJavLibMeta(code) {
+    try {
+        // JavLibrary search by code
+        const searchUrl = `https://www.javlibrary.com/en/vl_searchbyid.php?keyword=${encodeURIComponent(code)}`;
+        const html = await proxiedFetch(searchUrl, true);
+        if (!html) return null;
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // If redirected to a video page directly
+        let videoDoc = doc;
+
+        // If search results page, pick first result
+        const firstResult = doc.querySelector('.videos .video a');
+        if (firstResult) {
+            const href = firstResult.getAttribute('href');
+            const videoUrl = `https://www.javlibrary.com/en/${href}`;
+            const vHtml = await proxiedFetch(videoUrl, true);
+            if (!vHtml) return null;
+            videoDoc = parser.parseFromString(vHtml, 'text/html');
+        }
+
+        // Title
+        const titleEl = videoDoc.querySelector('h3#video_title a') || videoDoc.querySelector('.post-title');
+        const title = titleEl ? titleEl.textContent.trim() : null;
+
+        // Date
+        const dateEl = videoDoc.querySelector('#video_date .text');
+        const date = dateEl ? dateEl.textContent.trim() : '';
+
+        // Performers
+        const castEls = [...videoDoc.querySelectorAll('#video_cast .cast .star')];
+        const performers = castEls.map(el => el.textContent.trim()).filter(Boolean);
+
+        // Studio / maker
+        const makerEl = videoDoc.querySelector('#video_maker .text a');
+        const studio = makerEl ? makerEl.textContent.trim() : '';
+
+        if (!performers.length && !date) return null;
+        return { title, cover: '', performers, date, studio, duration: null, source: 'javlib' };
+    } catch { return null; }
+}
+
+async function enrichJavEntry(entry, localMeta) {
+    if (javMetaCache[entry.code]) return javMetaCache[entry.code];
+
+    // Layer 1: R18.dev
+    let meta = await fetchR18Meta(entry.code);
+
+    // Layer 2: DMM scrape
+    if (!meta || (!meta.performers?.length && !meta.date)) {
+        const dmmMeta = await fetchDmmMeta(entry.code);
+        if (dmmMeta) {
+            meta = meta ? { ...meta, ...Object.fromEntries(Object.entries(dmmMeta).filter(([,v]) => v)) } : dmmMeta;
+        }
+    }
+
+    // Layer 3: JavLibrary scrape
+    if (!meta || (!meta.performers?.length && !meta.date)) {
+        const javMeta = await fetchJavLibMeta(entry.code);
+        if (javMeta) {
+            meta = meta ? { ...meta, ...Object.fromEntries(Object.entries(javMeta).filter(([,v]) => v)) } : javMeta;
+        }
+    }
+
+    // Layer 4: local metadata.json fallback
+    if (!meta) {
+        meta = {
+            title: localMeta?.title || entry.code,
+            cover: localMeta?.cover || '',
+            performers: [],
+            date: '',
+            studio: '',
+            duration: null,
+            source: 'local'
+        };
+    } else {
+        // Fill missing fields from local metadata
+        if (!meta.title && localMeta?.title) meta.title = localMeta.title;
+        if (!meta.cover && localMeta?.cover) meta.cover = localMeta.cover;
+    }
+
+    javMetaCache[entry.code] = meta;
+    return meta;
+}
+
+// ── Prefetch all JAV metadata upfront ────────────────────
+async function fetchAllJavMeta(entries, metaMap) {
+    const statusEl = document.getElementById('date-fetch-status');
+    const textEl   = document.getElementById('date-fetch-text');
+    statusEl.style.display = 'flex';
+
+    let completed = 0;
+    const total = entries.length;
+
+    for (let i = 0; i < entries.length; i += JAV_CONCURRENCY) {
+        const batch = entries.slice(i, i + JAV_CONCURRENCY);
+        await Promise.all(batch.map(async entry => {
+            const localMeta = metaMap.get(entry.code.toUpperCase());
+            const meta = await enrichJavEntry(entry, localMeta);
+            entry.date        = meta.date || '';
+            entry.performers  = meta.performers || [];
+            entry.title       = meta.title || entry.code;
+            entry.cover       = meta.cover || entry.cover || '';
+            entry.studio      = meta.studio || '';
+            entry.duration    = meta.duration || null;
+            entry.metaSource  = meta.source || 'local';
+            completed++;
+            textEl.textContent = `Fetching metadata… ${completed}/${total}`;
+        }));
+    }
+
+    statusEl.style.display = 'none';
+}
+
+// ── TPDB fetch (IRL only) ─────────────────────────────────
 async function fetchTpdb(parentId) {
     if (tpdbCache[parentId]) return tpdbCache[parentId];
     try {
@@ -358,7 +581,6 @@ async function fetchTpdb(parentId) {
     } catch { return null; }
 }
 
-// ── Fetch all IRL dates upfront (with concurrency limit) ──
 async function fetchAllIrlDates(entries) {
     const statusEl = document.getElementById('date-fetch-status');
     const textEl   = document.getElementById('date-fetch-text');
@@ -367,14 +589,11 @@ async function fetchAllIrlDates(entries) {
     let completed = 0;
     const total = entries.length;
 
-    // Process in batches of TPDB_CONCURRENCY
     for (let i = 0; i < entries.length; i += TPDB_CONCURRENCY) {
         const batch = entries.slice(i, i + TPDB_CONCURRENCY);
         await Promise.all(batch.map(async entry => {
             const data = await fetchTpdb(entry.parentId);
-            if (data) {
-                entry.date = data.date || data.release_date || null;
-            }
+            if (data) entry.date = data.date || data.release_date || null;
             completed++;
             textEl.textContent = `Fetching dates… ${completed}/${total}`;
         }));
@@ -397,11 +616,33 @@ function createJavCard(entry) {
                 onerror="handleImgError(this,'${entry.code.replace(/'/g,"\\'")}')"
                 alt="${entry.code}">
             <div class="badge badge-jav">${entry.code}</div>
+            ${entry.metaSource ? `<div class="source-tag source-${entry.metaSource}">${entry.metaSource.toUpperCase()}</div>` : ''}
         </div>
         <div class="card-body">
             <div class="card-title">${entry.title || entry.code}</div>
-            <button class="copy-btn jav-copy"><span style="font-size:12px;">⎘</span> Copy URL</button>
+            <div class="card-meta" id="jav-meta-${entry.code.replace(/[^a-z0-9]/gi,'_')}"></div>
+            <button class="copy-btn"><span style="font-size:12px;">⎘</span> Copy URL</button>
         </div>`;
+
+    // Populate meta
+    const metaEl = card.querySelector('.card-meta');
+    const addMeta = (label, value, extraClass = '') => {
+        if (!value) return;
+        const row = document.createElement('div');
+        row.className = 'meta-row' + (extraClass ? ' ' + extraClass : '');
+        row.innerHTML = `<span class="meta-label">${label}</span>${value}`;
+        metaEl.appendChild(row);
+    };
+
+    if (entry.performers?.length) {
+        addMeta('Cast', entry.performers.slice(0, 6).join(', ') + (entry.performers.length > 6 ? ` +${entry.performers.length - 6}` : ''), 'meta-performers');
+    }
+    if (entry.studio) addMeta('Studio', entry.studio);
+    if (entry.date)   addMeta('Date', entry.date.slice(0, 10));
+    if (entry.duration) {
+        const h = Math.floor(entry.duration / 3600), m = Math.floor((entry.duration % 3600) / 60);
+        addMeta('Duration', h ? `${h}h ${m}m` : `${m}m`);
+    }
 
     card.querySelector('.copy-btn').onclick = () => copyUrl(card.querySelector('.copy-btn'), entry.url, false);
     return card;
@@ -427,7 +668,6 @@ function createIrlCard(entry) {
 
     card.querySelector('.copy-btn').onclick = () => copyUrl(card.querySelector('.copy-btn'), entry.url, true);
 
-    // Data already cached from the date-prefetch, so this resolves instantly
     fetchTpdb(entry.parentId).then(data => {
         if (!data) {
             const metaEl = document.getElementById(`meta-${entry.parentId}`);
@@ -572,10 +812,13 @@ function renderPage(page, skipPush) {
 // ── Search ────────────────────────────────────────────────
 function applySearch(term, page) {
     const t = term.toLowerCase().trim();
-    allEntries = t ? fullList.filter(e =>
-        (e.code || e.name || '').toLowerCase().includes(t) ||
-        (e.title || '').toLowerCase().includes(t)
-    ) : [...fullList];
+    allEntries = t ? fullList.filter(e => {
+        const performers = (e.performers || []).join(' ').toLowerCase();
+        return (e.code || e.name || '').toLowerCase().includes(t) ||
+               (e.title || '').toLowerCase().includes(t) ||
+               (e.studio || '').toLowerCase().includes(t) ||
+               performers.includes(t);
+    }) : [...fullList];
     document.getElementById('stats').textContent =
         t ? `${allEntries.length} of ${fullList.length} titles` : `${fullList.length} titles`;
     renderPage(page || 1);
@@ -596,23 +839,37 @@ async function loadJav() {
                 const match = lines[i].match(/,(.+)$/);
                 const code = match ? match[1].trim() : 'UNKNOWN';
                 const url = lines[i+1] && !lines[i+1].startsWith('#') ? lines[i+1].trim() : null;
-                if (url) entries.push({ code, url, title: code, cover: null });
+                if (url) entries.push({ code, url, title: code, cover: null, performers: [], date: '', studio: '', duration: null, metaSource: 'local' });
             }
         }
-        // No date available for JAV — keep natural m3u8 order (newest = last appended = reverse)
-        entries.reverse();
+        entries.reverse(); // newest last-added first
+
         const metaMap = new Map(metadata.map(m => [m.code?.toUpperCase(), m]));
-        masterList = entries.map(entry => {
-            const meta = metaMap.get(entry.code.toUpperCase());
-            return meta ? { ...entry, title: meta.title || entry.title, cover: meta.cover || entry.cover } : entry;
+
+        // Pre-populate from local metadata.json so we have something while fetching
+        entries.forEach(entry => {
+            const local = metaMap.get(entry.code.toUpperCase());
+            if (local) {
+                entry.title = local.title || entry.code;
+                entry.cover = local.cover || '';
+            }
         });
-        applySort(); // just copies masterList for JAV
+
+        document.getElementById('stats').textContent = `${entries.length} titles`;
+
+        // Fetch all metadata upfront (R18 → DMM → JavLib → local fallback)
+        await fetchAllJavMeta(entries, metaMap);
+
+        masterList = entries;
+        applySort();
+
         const { page, q } = getUrlParams();
         document.getElementById('search').value = q;
         document.getElementById('search-clear').style.display = q ? 'block' : 'none';
         applySearch(q, page);
-    } catch {
+    } catch (e) {
         showError('Failed to load JAV data.');
+        console.error(e);
     }
 }
 
@@ -626,16 +883,14 @@ async function loadIrl() {
             parentId: entry.ParentId,
             url: entry.Url,
             title: entry.Name || 'Unknown',
-            date: null // will be filled by fetchAllIrlDates
+            date: null
         }));
 
         document.getElementById('stats').textContent = `${rawList.length} titles`;
-
-        // Fetch all dates upfront so sorting is accurate
         await fetchAllIrlDates(rawList);
 
         masterList = rawList;
-        applySort(); // sort by date now that all dates are loaded
+        applySort();
         const { page, q } = getUrlParams();
         document.getElementById('search').value = q;
         document.getElementById('search-clear').style.display = q ? 'block' : 'none';
@@ -684,11 +939,9 @@ clearBtn.onclick = () => {
 window.addEventListener('popstate', () => {
     const { page, q, mode: m, sort } = getUrlParams();
     if (m !== mode) { mode = m; updateModeUI(); loadMode(); return; }
-    if (mode === 'irl') {
-        sortOrder = sort || 'newest';
-        document.getElementById('sort-select').value = sortOrder;
-        applySort();
-    }
+    sortOrder = sort || 'newest';
+    document.getElementById('sort-select').value = sortOrder;
+    applySort();
     searchEl.value = q;
     clearBtn.style.display = q ? 'block' : 'none';
     applySearch(q, page);
