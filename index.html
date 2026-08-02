@@ -95,14 +95,34 @@
         .meta-label { color: #555; font-weight: 600; margin-right: 3px; }
         .meta-performers { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
+        /* Copy button — shrunk to make room for MPV button */
         .copy-btn {
-            margin-top: 6px; padding: 7px 0; background: #222; color: #fff;
-            border: none; border-radius: 5px; font-size: 11px; font-weight: 700;
+            margin-top: 6px; padding: 5px 0; background: #222; color: #fff;
+            border: none; border-radius: 5px; font-size: 10px; font-weight: 700;
             cursor: pointer; transition: background 0.18s; width: 100%;
         }
         .copy-btn:hover { background: #E50914; }
         .copy-btn.irl:hover { background: #7c3aed; }
         .copy-btn.success { background: #1a6b1a !important; }
+
+        /* MPV play button */
+        .mpv-btn {
+            margin-top: 5px; padding: 7px 0; background: #E50914; color: #fff;
+            border: none; border-radius: 5px; font-size: 11px; font-weight: 700;
+            cursor: pointer; transition: background 0.18s, opacity 0.18s; width: 100%;
+        }
+        .mpv-btn.irl { background: #7c3aed; }
+        .mpv-btn:hover { opacity: 0.85; }
+
+        /* Toast for MPV launch feedback */
+        .mpv-toast {
+            position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: #1a1a1a; border: 1px solid #333; color: #e8e8e8;
+            padding: 10px 18px; border-radius: 8px; font-size: 13px;
+            opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s;
+            z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .mpv-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
         /* Skeleton */
         .skeleton {
@@ -383,6 +403,39 @@ async function fetchAllIrlDates(entries) {
     statusEl.style.display = 'none';
 }
 
+// ── MPV launcher ──────────────────────────────────────────
+function showToast(msg) {
+    let toast = document.getElementById('mpv-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'mpv-toast';
+        toast.className = 'mpv-toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.classList.add('visible');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => toast.classList.remove('visible'), 2500);
+}
+
+function playInMpv(url) {
+    if (!url) { showToast("No URL available for this title"); return; }
+    const stripped = url.replace(/^https?:\/\//, '');
+    const scheme = url.startsWith('https') ? 'https' : 'http';
+    const intentUrl = `intent://${stripped}#Intent;package=is.xyz.mpv;scheme=${scheme};end`;
+
+    let hidden = false;
+    const onHide = () => { hidden = true; };
+    document.addEventListener('visibilitychange', onHide, { once: true });
+
+    window.location.href = intentUrl;
+
+    setTimeout(() => {
+        document.removeEventListener('visibilitychange', onHide);
+        if (!hidden) showToast("Couldn't open MPV — is it installed?");
+    }, 1500);
+}
+
 // ── Card builders ─────────────────────────────────────────
 function createJavCard(entry) {
     const card = document.createElement('div');
@@ -401,9 +454,11 @@ function createJavCard(entry) {
         <div class="card-body">
             <div class="card-title">${entry.title || entry.code}</div>
             <button class="copy-btn jav-copy"><span style="font-size:12px;">⎘</span> Copy URL</button>
+            <button class="mpv-btn">▶ Play in MPV</button>
         </div>`;
 
     card.querySelector('.copy-btn').onclick = () => copyUrl(card.querySelector('.copy-btn'), entry.url, false);
+    card.querySelector('.mpv-btn').onclick = () => playInMpv(entry.url);
     return card;
 }
 
@@ -423,9 +478,11 @@ function createIrlCard(entry) {
                 <div class="irl-loading"><div class="spinner"></div><span>Fetching details…</span></div>
             </div>
             <button class="copy-btn irl"><span style="font-size:12px;">⎘</span> Copy URL</button>
+            <button class="mpv-btn irl">▶ Play in MPV</button>
         </div>`;
 
     card.querySelector('.copy-btn').onclick = () => copyUrl(card.querySelector('.copy-btn'), entry.url, true);
+    card.querySelector('.mpv-btn').onclick = () => playInMpv(entry.url);
 
     // Data already cached from the date-prefetch, so this resolves instantly
     fetchTpdb(entry.parentId).then(data => {
